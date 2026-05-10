@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
+using DG.Tweening;
 
 public class CarFlip : MonoBehaviour
 {
@@ -17,6 +18,7 @@ public class CarFlip : MonoBehaviour
     private float flipAngleDone = 0f;
     private float flipDirection = 0f;
     private bool wasGrounded = true;
+    public bool IsFlipping => isFlipping;
 
     void Awake()
     {
@@ -38,6 +40,15 @@ public class CarFlip : MonoBehaviour
         isFlipping = true;
         hasFlippedThisJump = true;
         flipAngleDone = 0f;
+
+        // REPLACE with:
+        if (carVisuals != null)
+        {
+            carVisuals.DOKill();
+            carVisuals.localScale = Vector3.one; // reset before punch so it always starts clean
+            carVisuals.DOPunchScale(new Vector3(0.2f, -0.3f, 0.2f), 0.25f, 5, 0.5f)
+                .OnComplete(() => carVisuals.localScale = Vector3.one);
+        }
 
         // Tell WheelVisuals to stop overriding meshes
         if (wheelVisuals != null)
@@ -76,6 +87,12 @@ public class CarFlip : MonoBehaviour
 
         float step = flipSpeed * Time.deltaTime;
         flipAngleDone += step;
+
+        if (carVisuals != null)
+        {
+            carVisuals.DOKill();
+            carVisuals.localScale = Vector3.one; // hard reset after flip done
+        }
 
         if (flipAngleDone >= 360f)
         {

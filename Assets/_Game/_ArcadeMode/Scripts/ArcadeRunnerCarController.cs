@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using UnityEngine.InputSystem;
+using DG.Tweening;
 
 [RequireComponent(typeof(Rigidbody))]
 public class ArcadeRunnerCarController : MonoBehaviour
@@ -44,6 +45,28 @@ public class ArcadeRunnerCarController : MonoBehaviour
 
     public bool IsGrounded => isGrounded;
 
+    [Header("Juice - Visual Reference")]
+    public Transform carVisuals; // drag your CarVisuals child here
+    public float bodyTiltAngle = 8f;
+    public float bodyTiltSpeed = 6f;
+
+    private bool wasGroundedPrev = true;
+
+    // Add this field near the top with other private fields:
+    private CarFlip carFlip;
+
+    [Header("Boost")]
+    public float boostMultiplier = 2f;
+    public float boostDuration = 3f;
+    public float boostCooldown = 5f;
+
+    private bool isBoosting = false;
+    private float boostTimer = 0f;
+    private float cooldownTimer = 0f;
+    public bool IsBoosting => isBoosting;
+    public float BoostProgress => Mathf.Clamp01(boostTimer / boostDuration); // 1 = full, 0 = done
+
+
 
     // =========================
     // INIT
@@ -51,6 +74,8 @@ public class ArcadeRunnerCarController : MonoBehaviour
 
     void Awake()
     {
+        carFlip = GetComponent<CarFlip>();
+        
         rb = GetComponent<Rigidbody>();
         rb.centerOfMass = new Vector3(0, -0.5f, 0);
         rb.constraints =
@@ -78,6 +103,12 @@ public class ArcadeRunnerCarController : MonoBehaviour
             jumpRequested = true;
     }
 
+    public void OnBoost(InputValue value)
+    {
+        if (value.isPressed)
+            TryActivateBoost();
+    }
+
     // =========================
     // FIXED UPDATE
     // =========================
@@ -90,6 +121,45 @@ public class ArcadeRunnerCarController : MonoBehaviour
         ApplyGrip();
         ApplyDownforce();
         ApplyJump();
+
+        if (!GetComponent<CarFlip>()?.enabled ?? false) // only if no flip active
+            ApplyBodyTilt();
+
+        
+        // Landing squish
+        GetComponent<WheelVisuals>()?.PlayLandingWobble();
+        if (isGrounded && !wasGroundedPrev && carVisuals != null)
+        {
+            carVisuals.DOKill();
+            carVisuals.DOScaleY(0.65f, 0.07f).SetEase(Ease.OutQuad)
+                .OnComplete(() =>
+                    carVisuals.DOScaleY(1.1f, 0.12f).SetEase(Ease.OutBack)
+                        .OnComplete(() =>
+                            carVisuals.DOScaleY(1f, 0.1f).SetEase(Ease.InOutSine)));
+        }
+        wasGroundedPrev = isGrounded;
+
+        if (isBoosting)
+        {
+            boostTimer -= Time.fixedDeltaTime;
+            if (boostTimer <= 0f)
+            {
+                isBoosting = false;
+                cooldownTimer = boostCooldown;
+            }
+        }
+        else if (cooldownTimer > 0f)
+        {
+            cooldownTimer -= Time.fixedDeltaTime;
+        }
+    }
+
+    
+    void Update()
+    {
+        
+        if (carFlip == null || !carFlip.IsFlipping)
+            ApplyBodyTilt();
     }
 
     // =========================
@@ -100,10 +170,19 @@ public class ArcadeRunnerCarController : MonoBehaviour
     {
         float finalThrottle = autoAccelerate ? autoThrottle : throttleInput;
 
-        if (finalThrottle > 0)
+        /*if (finalThrottle > 0)
         {
             rb.AddForce(
                 transform.forward * finalThrottle * acceleration,
+                ForceMode.Acceleration
+            );
+        }*/
+
+        if (finalThrottle > 0)
+        {
+            float boostMult = isBoosting ? boostMultiplier : 1f;
+            rb.AddForce(
+                transform.forward * finalThrottle * acceleration * boostMult,
                 ForceMode.Acceleration
             );
         }
@@ -117,7 +196,7 @@ public class ArcadeRunnerCarController : MonoBehaviour
 
         Vector3 flatVel = new Vector3(rb.linearVelocity.x, 0, rb.linearVelocity.z);
 
-        if (flatVel.magnitude > maxSpeed)
+        /*if (flatVel.magnitude > maxSpeed)
         {
             Vector3 limitedVel = flatVel.normalized * maxSpeed;
             rb.linearVelocity = new Vector3(
@@ -125,6 +204,12 @@ public class ArcadeRunnerCarController : MonoBehaviour
                 rb.linearVelocity.y,
                 limitedVel.z
             );
+        }*/
+        float currentMaxSpeed = isBoosting ? maxSpeed * boostMultiplier : maxSpeed;
+        if (flatVel.magnitude > currentMaxSpeed)
+        {
+            Vector3 limitedVel = flatVel.normalized * currentMaxSpeed;
+            rb.linearVelocity = new Vector3(limitedVel.x, rb.linearVelocity.y, limitedVel.z);
         }
     }
 
@@ -195,7 +280,7 @@ public class ArcadeRunnerCarController : MonoBehaviour
     // JUMP
     // =========================
 
-    void ApplyJump()
+    /*void ApplyJump()
     {
         if (jumpRequested && isGrounded)
         {
@@ -209,5 +294,60 @@ public class ArcadeRunnerCarController : MonoBehaviour
         {
             jumpRequested = false;
         }
+    }*/
+
+    void ApplyJump()
+    {
+        if (jumpRequested && isGrounded)
+        {
+            rb.AddForce(Vector3.up * jumpForce, ForceMode.VelocityChange);
+            jumpRequested = false;
+
+            // Squash on launch: squish down then spring up
+            if (carVisuals != null)
+            {
+                carVisuals.DOKill();
+                carVisuals.DOScaleY(0.6f, 0.08f).SetEase(Ease.OutQuad)
+                    .OnComplete(() =>
+                        carVisuals.DOScaleY(1.15f, 0.15f).SetEase(Ease.OutBack)
+                            .OnComplete(() =>
+                                carVisuals.DOScaleY(1f, 0.1f).SetEase(Ease.InOutSine)));
+            }
+        }
+        else if (!isGrounded)
+        {
+            jumpRequested = false;
+        }
     }
+
+    /*void ApplyBodyTilt()
+    {
+        if (carVisuals == null) return;
+
+        float targetZ = -steerInput * bodyTiltAngle; // lean into turn
+        Vector3 current = carVisuals.localEulerAngles;
+        float currentZ = current.z > 180f ? current.z - 360f : current.z;
+        float newZ = Mathf.LerpAngle(currentZ, targetZ, Time.fixedDeltaTime * bodyTiltSpeed);
+        carVisuals.localEulerAngles = new Vector3(current.x, current.y, newZ);
+    }*/
+
+    void ApplyBodyTilt()
+    {
+        if (carVisuals == null) return;
+
+        float targetZ = -steerInput * bodyTiltAngle;
+        Vector3 current = carVisuals.localEulerAngles;
+        float currentZ = current.z > 180f ? current.z - 360f : current.z;
+        float newZ = Mathf.LerpAngle(currentZ, targetZ, Time.deltaTime * bodyTiltSpeed);
+        carVisuals.localEulerAngles = new Vector3(current.x, current.y, newZ);
+    }
+
+    void TryActivateBoost()
+    {
+        if (isBoosting || cooldownTimer > 0f) return;
+        isBoosting = true;
+        boostTimer = boostDuration;
+    }
+
+
 }

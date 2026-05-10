@@ -195,7 +195,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 31321ba15b8f8eb4c954353edc038b1d, type: 2}
+  - {fileID: 2100000, guid: 666a5c27dc8cc44949ca4c159e8eb77e, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -962,6 +962,11 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 3156546467581907948, guid: d51ea43b84d47e640a1a76973419c278, type: 3}
   m_PrefabInstance: {fileID: 1601150199246583644}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &726609512 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 3160169198507046179, guid: d51ea43b84d47e640a1a76973419c278, type: 3}
+  m_PrefabInstance: {fileID: 1601150199246583644}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &814469071
 GameObject:
   m_ObjectHideFlags: 0
@@ -1163,6 +1168,35 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 3157138248084206169, guid: d51ea43b84d47e640a1a76973419c278, type: 3}
   m_PrefabInstance: {fileID: 1601150199246583644}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &904616767 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 5875627551958643593, guid: d51ea43b84d47e640a1a76973419c278, type: 3}
+  m_PrefabInstance: {fileID: 1601150199246583644}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 726609512}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e54dffa9e2fc3814a9afe1ff3c14ff73, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ArcadeRunnerCarController
+--- !u!114 &904616772
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 726609512}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8ae580af0cf024625b4dacb41933e1a9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BoostVisuals
+  carVisuals: {fileID: 524748707}
+  carController: {fileID: 904616767}
+  stretchZ: 1.2
+  squishXY: 0.95
+  stretchInTime: 0.15
+  stretchOutTime: 0.25
 --- !u!1 &933875201
 GameObject:
   m_ObjectHideFlags: 0
@@ -6798,6 +6832,10 @@ PrefabInstance:
       propertyPath: m_Mesh
       value: 
       objectReference: {fileID: 0}
+    - target: {fileID: 1817744954849192986, guid: d51ea43b84d47e640a1a76973419c278, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 1994819059638996954, guid: d51ea43b84d47e640a1a76973419c278, type: 3}
       propertyPath: carVisuals
       value: 
@@ -6805,6 +6843,22 @@ PrefabInstance:
     - target: {fileID: 3128965305720770227, guid: d51ea43b84d47e640a1a76973419c278, type: 3}
       propertyPath: m_Enabled
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3157084807783388378, guid: d51ea43b84d47e640a1a76973419c278, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 0.88
+      objectReference: {fileID: 0}
+    - target: {fileID: 3157084807783388378, guid: d51ea43b84d47e640a1a76973419c278, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 0.88
+      objectReference: {fileID: 0}
+    - target: {fileID: 3157084807783388378, guid: d51ea43b84d47e640a1a76973419c278, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 0.88
+      objectReference: {fileID: 0}
+    - target: {fileID: 3157084807783388378, guid: d51ea43b84d47e640a1a76973419c278, type: 3}
+      propertyPath: m_ConstrainProportionsScale
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3157138248084206169, guid: d51ea43b84d47e640a1a76973419c278, type: 3}
       propertyPath: m_LocalPosition.x
@@ -6846,29 +6900,73 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 3159945489682784295, guid: d51ea43b84d47e640a1a76973419c278, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 3160169198507046179, guid: d51ea43b84d47e640a1a76973419c278, type: 3}
       propertyPath: m_Name
       value: evo
+      objectReference: {fileID: 0}
+    - target: {fileID: 3160177979667715371, guid: d51ea43b84d47e640a1a76973419c278, type: 3}
+      propertyPath: m_IsActive
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3160236015821353836, guid: d51ea43b84d47e640a1a76973419c278, type: 3}
       propertyPath: m_IsActive
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 3160315789731245840, guid: d51ea43b84d47e640a1a76973419c278, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 3283313219879323573, guid: d51ea43b84d47e640a1a76973419c278, type: 3}
       propertyPath: m_Enabled
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5625573794441393884, guid: d51ea43b84d47e640a1a76973419c278, type: 3}
+      propertyPath: m_IsActive
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5757743179963700804, guid: d51ea43b84d47e640a1a76973419c278, type: 3}
       propertyPath: m_Enabled
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 5838212932478469311, guid: d51ea43b84d47e640a1a76973419c278, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 5875627551958643593, guid: d51ea43b84d47e640a1a76973419c278, type: 3}
       propertyPath: jumpForce
       value: 10
       objectReference: {fileID: 0}
+    - target: {fileID: 5875627551958643593, guid: d51ea43b84d47e640a1a76973419c278, type: 3}
+      propertyPath: carVisuals
+      value: 
+      objectReference: {fileID: 524748707}
+    - target: {fileID: 5875627551958643593, guid: d51ea43b84d47e640a1a76973419c278, type: 3}
+      propertyPath: bodyTiltAngle
+      value: -4
+      objectReference: {fileID: 0}
+    - target: {fileID: 5875627551958643593, guid: d51ea43b84d47e640a1a76973419c278, type: 3}
+      propertyPath: boostCooldown
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 5875627551958643593, guid: d51ea43b84d47e640a1a76973419c278, type: 3}
+      propertyPath: boostDuration
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 5875627551958643593, guid: d51ea43b84d47e640a1a76973419c278, type: 3}
+      propertyPath: boostMultiplier
+      value: 1.6
+      objectReference: {fileID: 0}
     - target: {fileID: 6306743270488904552, guid: d51ea43b84d47e640a1a76973419c278, type: 3}
       propertyPath: m_Mesh
       value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 7499217056560030046, guid: d51ea43b84d47e640a1a76973419c278, type: 3}
+      propertyPath: m_IsActive
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7597936933201154361, guid: d51ea43b84d47e640a1a76973419c278, type: 3}
       propertyPath: maxSteerAngle
@@ -6932,7 +7030,10 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 3157138248084206169, guid: d51ea43b84d47e640a1a76973419c278, type: 3}
       insertIndex: 0
       addedObject: {fileID: 524748707}
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 3160169198507046179, guid: d51ea43b84d47e640a1a76973419c278, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 904616772}
   m_SourcePrefab: {fileID: 100100000, guid: d51ea43b84d47e640a1a76973419c278, type: 3}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
