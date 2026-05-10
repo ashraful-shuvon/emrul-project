@@ -8,7 +8,7 @@ public class WheelVisuals : MonoBehaviour
         public WheelCollider collider;
         public Transform mesh;
         public bool flipY = false;
-        public bool steers = false; // enable for front wheels only
+        public bool steers = false;
     }
 
     [Header("Wheels")]
@@ -19,6 +19,9 @@ public class WheelVisuals : MonoBehaviour
 
     [Header("Steering")]
     public float maxSteerAngle = 30f;
+
+    // Set to true by CarFlip while flipping
+    [HideInInspector] public bool isFlipping = false;
 
     private Rigidbody rb;
     private ArcadeRunnerCarController carController;
@@ -31,6 +34,10 @@ public class WheelVisuals : MonoBehaviour
 
     void Update()
     {
+        // Stop overriding wheel positions during flip
+        // so CarVisuals rotation carries all meshes freely
+        if (isFlipping) return;
+
         UpdateWheel(frontLeft);
         UpdateWheel(frontRight);
         UpdateWheel(rearLeft);
@@ -41,12 +48,8 @@ public class WheelVisuals : MonoBehaviour
     {
         if (wheel.collider == null || wheel.mesh == null) return;
 
-        // Feed steer angle into WheelCollider so GetWorldPose returns correct rotation
         if (wheel.steers)
-        {
-            wheel.collider.steerAngle =
-                carController.steerInput * maxSteerAngle;
-        }
+            wheel.collider.steerAngle = carController.steerInput * maxSteerAngle;
 
         wheel.collider.GetWorldPose(out Vector3 position, out Quaternion rotation);
 
@@ -55,7 +58,6 @@ public class WheelVisuals : MonoBehaviour
         if (wheel.flipY)
             rotation *= Quaternion.Euler(0f, 180f, 0f);
 
-        // Manual spin from velocity since WheelCollider isn't motorized
         float rpm = wheel.collider.rpm;
         if (Mathf.Abs(rpm) < 1f && rb != null)
         {
