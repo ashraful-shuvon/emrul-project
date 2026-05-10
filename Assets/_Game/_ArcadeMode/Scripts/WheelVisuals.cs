@@ -9,6 +9,9 @@ public class WheelVisuals : MonoBehaviour
         public Transform mesh;
         public bool flipY = false;
         public bool steers = false;
+        // Cached local pose when leaving ground
+        [HideInInspector] public Vector3 lastLocalPos;
+        [HideInInspector] public Quaternion lastLocalRot;
     }
 
     [Header("Wheels")]
@@ -33,14 +36,31 @@ public class WheelVisuals : MonoBehaviour
 
     void Update()
     {
-        // Stop overriding wheel positions during flip OR while airborne
-        // so CarVisuals tilt/flip carries all meshes freely
-        if (isFlipping || !carController.IsGrounded) return;
+        if (isFlipping) return;
 
+        if (!carController.IsGrounded)
+        {
+            // In air — lock wheels to last known local pose
+            // They follow CarVisuals naturally as children
+            ApplyLocalPose(frontLeft);
+            ApplyLocalPose(frontRight);
+            ApplyLocalPose(rearLeft);
+            ApplyLocalPose(rearRight);
+            return;
+        }
+
+        // Grounded — update normally and cache local pose
         UpdateWheel(frontLeft);
         UpdateWheel(frontRight);
         UpdateWheel(rearLeft);
         UpdateWheel(rearRight);
+    }
+
+    void ApplyLocalPose(WheelPair wheel)
+    {
+        if (wheel.mesh == null) return;
+        wheel.mesh.localPosition = wheel.lastLocalPos;
+        wheel.mesh.localRotation = wheel.lastLocalRot;
     }
 
     void UpdateWheel(WheelPair wheel)
@@ -51,6 +71,20 @@ public class WheelVisuals : MonoBehaviour
             wheel.collider.steerAngle = carController.steerInput * maxSteerAngle;
 
         wheel.collider.GetWorldPose(out Vector3 position, out Quaternion rotation);
+
+        // Apply drift yaw offset
+        float yawOffset = carController.currentDriftYaw;
+        if (Mathf.Abs(yawOffset) > 0.01f)
+        {
+            Vector3 localPos = transform.InverseTransformPoint(position);
+            Quaternion yawRot = Quaternion.Euler(0f, yawOffset, 0f);
+            localPos = yawRot * localPos;
+            position = transform.TransformPoint(localPos);
+            rotation = transform.rotation *
+                       yawRot *
+                       Quaternion.Inverse(transform.rotation) *
+                       rotation;
+        }
 
         wheel.mesh.position = position;
 
@@ -68,5 +102,9 @@ public class WheelVisuals : MonoBehaviour
         }
 
         wheel.mesh.rotation = rotation;
+
+        // Cache local pose for air use
+        wheel.lastLocalPos = wheel.mesh.localPosition;
+        wheel.lastLocalRot = wheel.mesh.localRotation;
     }
 }
