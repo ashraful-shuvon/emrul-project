@@ -20,7 +20,6 @@ public class WheelVisuals : MonoBehaviour
     [Header("Steering")]
     public float maxSteerAngle = 30f;
 
-    // Set to true by CarFlip while flipping
     [HideInInspector] public bool isFlipping = false;
 
     private Rigidbody rb;
@@ -34,9 +33,9 @@ public class WheelVisuals : MonoBehaviour
 
     void Update()
     {
-        // Stop overriding wheel positions during flip
-        // so CarVisuals rotation carries all meshes freely
-        if (isFlipping) return;
+        // Stop overriding wheel positions during flip OR while airborne
+        // so CarVisuals tilt/flip carries all meshes freely
+        if (isFlipping || !carController.IsGrounded) return;
 
         UpdateWheel(frontLeft);
         UpdateWheel(frontRight);

@@ -16,6 +16,9 @@ public class ArcadeRunnerCarController : MonoBehaviour
     [Header("Steering")]
     public float turnSpeed = 120f;
 
+    [Header("Air Steering")]
+    public float airSteerForce = 10f;
+
     [Header("Grip")]
     [Range(0f, 1f)]
     public float grip = 0.9f;
@@ -24,26 +27,31 @@ public class ArcadeRunnerCarController : MonoBehaviour
     public float downforce = 20f;
     public float extraGravity = 30f;
 
-    [Header("Steering Assist")]
-    [Range(0f, 1f)]
-    public float steeringAssist = 0.05f;
-
     [Header("Jumping")]
     public float jumpForce = 8f;
+
+    [Header("Double Jump / Wings")]
+    public float wingJumpForce = 12f;
+    public float wingForwardBoost = 15f;
 
     [Header("Ground Check")]
     public Transform groundCheck;
     public float groundCheckRadius = 0.2f;
     public LayerMask groundLayer;
 
-    private Rigidbody rb;
+    // Public accessors
+    public bool IsGrounded => isGrounded;
     [HideInInspector] public float steerInput;
+    [HideInInspector] public bool isDoubleJumping = false;
+    [HideInInspector] public bool wingsClosed = false;
+
+    private Rigidbody rb;
     private float throttleInput;
     private bool isGrounded;
     private bool jumpRequested;
-
-    public bool IsGrounded => isGrounded;
-
+    private bool wingJumpRequested;
+    private int jumpCount = 0;
+    private bool wasGroundedLastFrame = true;
 
     // =========================
     // INIT
@@ -74,8 +82,38 @@ public class ArcadeRunnerCarController : MonoBehaviour
 
     public void OnJump(InputValue value)
     {
-        if (value.isPressed)
+        if (!value.isPressed) return;
+
+        if (isGrounded)
+        {
+            jumpCount = 1;
             jumpRequested = true;
+            isDoubleJumping = false;
+            wingsClosed = false;
+        }
+        else if (jumpCount == 1)
+        {
+            jumpCount = 2;
+            isDoubleJumping = true;
+            wingJumpRequested = true;
+        }
+        else if (jumpCount == 2)
+        {
+            jumpCount = 3;
+            isDoubleJumping = false;
+            wingsClosed = true;
+
+            rb.linearVelocity = new Vector3(
+                rb.linearVelocity.x,
+                0f,
+                rb.linearVelocity.z
+            );
+
+            rb.AddForce(
+                Vector3.down * 10f,
+                ForceMode.VelocityChange
+            );
+        }
     }
 
     // =========================
@@ -87,9 +125,11 @@ public class ArcadeRunnerCarController : MonoBehaviour
         CheckGrounded();
         ApplyMovement();
         ApplySteering();
+        ApplyAirSteering();
         ApplyGrip();
         ApplyDownforce();
         ApplyJump();
+        ApplyWingJump();
     }
 
     // =========================
@@ -98,7 +138,8 @@ public class ArcadeRunnerCarController : MonoBehaviour
 
     void ApplyMovement()
     {
-        float finalThrottle = autoAccelerate ? autoThrottle : throttleInput;
+        float finalThrottle =
+            autoAccelerate ? autoThrottle : throttleInput;
 
         if (finalThrottle > 0)
         {
@@ -115,7 +156,9 @@ public class ArcadeRunnerCarController : MonoBehaviour
             );
         }
 
-        Vector3 flatVel = new Vector3(rb.linearVelocity.x, 0, rb.linearVelocity.z);
+        // Speed limit
+        Vector3 flatVel =
+            new Vector3(rb.linearVelocity.x, 0, rb.linearVelocity.z);
 
         if (flatVel.magnitude > maxSpeed)
         {
@@ -129,21 +172,64 @@ public class ArcadeRunnerCarController : MonoBehaviour
     }
 
     // =========================
-    // STEERING
+    // STEERING (GROUND)
     // =========================
 
     void ApplySteering()
     {
-        float speedFactor = rb.linearVelocity.magnitude / maxSpeed;
-        float steerAmount = steerInput * turnSpeed * speedFactor;
+        if (!isGrounded) return;
 
-        Quaternion turnRot = Quaternion.Euler(
-            0f,
-            steerAmount * Time.fixedDeltaTime,
-            0f
-        );
+        float speedFactor = rb.linearVelocity.magnitude / maxSpeed;
+
+        float steerAmount =
+            steerInput *
+            turnSpeed *
+            speedFactor *
+            Time.fixedDeltaTime;
+
+        Quaternion turnRot = Quaternion.Euler(0f, steerAmount, 0f);
 
         rb.MoveRotation(rb.rotation * turnRot);
+
+        // Rotate only flat velocity — never touch Y
+        Vector3 flatVel =
+            new Vector3(rb.linearVelocity.x, 0f, rb.linearVelocity.z);
+
+        Vector3 rotatedFlat = turnRot * flatVel;
+
+        rb.linearVelocity = new Vector3(
+            rotatedFlat.x,
+            rb.linearVelocity.y,
+            rotatedFlat.z
+        );
+    }
+
+    // =========================
+    // STEERING (AIR)
+    // =========================
+
+    void ApplyAirSteering()
+    {
+        if (isGrounded) return;
+
+        // Lateral force for drift feel in air
+        rb.AddForce(
+            transform.right *
+            steerInput *
+            airSteerForce,
+            ForceMode.Acceleration
+        );
+
+        // Gentle rotation in air
+        float airTurnAmount =
+            steerInput *
+            (turnSpeed * 0.4f) *
+            Time.fixedDeltaTime;
+
+        rb.MoveRotation(
+            rb.rotation *
+            Quaternion.Euler(0f, airTurnAmount, 0f)
+        );
     }
 
     // =========================
@@ -152,15 +238,19 @@ public class ArcadeRunnerCarController : MonoBehaviour
 
     void ApplyGrip()
     {
-        Vector3 localVel = transform.InverseTransformDirection(rb.linearVelocity);
-        localVel.x *= (1f - grip);
-        rb.linearVelocity = transform.TransformDirection(localVel);
+        if (!isGrounded) return;
 
-        rb.linearVelocity = Vector3.Lerp(
-            rb.linearVelocity,
-            transform.forward * rb.linearVelocity.magnitude,
-            steeringAssist
+        Vector3 localVel =
+            transform.InverseTransformDirection(rb.linearVelocity);
+
+        localVel.x = Mathf.Lerp(
+            localVel.x,
+            0f,
+            grip * Time.fixedDeltaTime * 60f
         );
+
+        rb.linearVelocity =
+            transform.TransformDirection(localVel);
     }
 
     // =========================
@@ -171,7 +261,10 @@ public class ArcadeRunnerCarController : MonoBehaviour
     {
         if (!isGrounded) return;
 
-        rb.AddForce(Vector3.down * downforce * rb.linearVelocity.magnitude);
+        rb.AddForce(
+            Vector3.down * downforce * rb.linearVelocity.magnitude
+        );
+
         rb.AddForce(Vector3.down * extraGravity);
     }
 
@@ -209,5 +302,41 @@ public class ArcadeRunnerCarController : MonoBehaviour
         {
             jumpRequested = false;
         }
+
+        if (isGrounded && !wasGroundedLastFrame)
+        {
+            jumpCount = 0;
+            isDoubleJumping = false;
+            wingsClosed = false;
+        }
+
+        wasGroundedLastFrame = isGrounded;
+    }
+
+    // =========================
+    // WING JUMP
+    // =========================
+
+    void ApplyWingJump()
+    {
+        if (!wingJumpRequested) return;
+
+        wingJumpRequested = false;
+
+        rb.linearVelocity = new Vector3(
+            rb.linearVelocity.x,
+            0f,
+            rb.linearVelocity.z
+        );
+
+        rb.AddForce(
+            Vector3.up * wingJumpForce,
+            ForceMode.VelocityChange
+        );
+
+        rb.AddForce(
+            transform.forward * wingForwardBoost,
+            ForceMode.VelocityChange
+        );
     }
 }
