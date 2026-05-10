@@ -37,10 +37,13 @@ public class ArcadeRunnerCarController : MonoBehaviour
     public LayerMask groundLayer;
 
     private Rigidbody rb;
-    private float steerInput;
+    [HideInInspector] public float steerInput;
     private float throttleInput;
     private bool isGrounded;
     private bool jumpRequested;
+
+    public bool IsGrounded => isGrounded;
+
 
     // =========================
     // INIT
