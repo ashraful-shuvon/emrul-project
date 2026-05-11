@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using UnityEngine.InputSystem;
+using DG.Tweening;
 
 [RequireComponent(typeof(Rigidbody))]
 public class ArcadeRunnerCarController : MonoBehaviour
@@ -15,7 +16,6 @@ public class ArcadeRunnerCarController : MonoBehaviour
 
     [Header("Steering")]
     public float turnSpeed = 120f;
-    public float airSteerForce = 10f;
 
     [Header("Grip")]
     [Range(0f, 1f)]
@@ -25,189 +25,329 @@ public class ArcadeRunnerCarController : MonoBehaviour
     public float downforce = 20f;
     public float extraGravity = 30f;
 
+    [Header("Steering Assist")]
+    [Range(0f, 1f)]
+    public float steeringAssist = 0.05f;
+
     [Header("Jumping")]
     public float jumpForce = 8f;
-    public float wingJumpForce = 12f;
-    public float wingForwardBoost = 15f;
 
     [Header("Ground Check")]
     public Transform groundCheck;
     public float groundCheckRadius = 0.2f;
     public LayerMask groundLayer;
 
-    [Header("Visuals")]
-    public Transform carVisuals;
-
-    [Header("Drift Yaw")]
-    public float maxDriftYaw = 15f;
-    public float driftYawSpeed = 5f;
-    public float driftYawReturnSpeed = 4f;
-
-    [HideInInspector] public float currentDriftYaw = 0f;
+    private Rigidbody rb;
+    [HideInInspector] public float steerInput;
+    private float throttleInput;
+    private bool isGrounded;
+    private bool jumpRequested;
 
     public bool IsGrounded => isGrounded;
-    [HideInInspector] public float steerInput;
-    [HideInInspector] public bool isDoubleJumping;
-    [HideInInspector] public bool wingsClosed;
 
-    private Rigidbody rb;
-    private float throttleInput;
-    private bool isGrounded, jumpRequested, wingJumpRequested, wasGroundedLastFrame;
-    private int jumpCount;
+    [Header("Juice - Visual Reference")]
+    public Transform carVisuals; // drag your CarVisuals child here
+    public float bodyTiltAngle = 8f;
+    public float bodyTiltSpeed = 6f;
+
+    private bool wasGroundedPrev = true;
+
+    // Add this field near the top with other private fields:
+    private CarFlip carFlip;
+
+    [Header("Boost")]
+    public float boostMultiplier = 2f;
+    public float boostDuration = 3f;
+    public float boostCooldown = 5f;
+
+    private bool isBoosting = false;
+    private float boostTimer = 0f;
+    private float cooldownTimer = 0f;
+    public bool IsBoosting => isBoosting;
+    public float BoostProgress => Mathf.Clamp01(boostTimer / boostDuration); // 1 = full, 0 = done
+
+
+
+    // =========================
+    // INIT
+    // =========================
 
     void Awake()
     {
+        carFlip = GetComponent<CarFlip>();
+        
         rb = GetComponent<Rigidbody>();
         rb.centerOfMass = new Vector3(0, -0.5f, 0);
-        rb.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
-        if (groundLayer.value == 0) groundLayer = LayerMask.GetMask("Ground");
+        rb.constraints =
+            RigidbodyConstraints.FreezeRotationX |
+            RigidbodyConstraints.FreezeRotationZ;
+
+        if (groundLayer.value == 0)
+            groundLayer = LayerMask.GetMask("Ground");
     }
 
-    void Update()
-    {
-        if (carVisuals == null) return;
+    // =========================
+    // INPUT
+    // =========================
 
-        // Get lateral slip
-        Vector3 localVel = transform.InverseTransformDirection(rb.linearVelocity);
-        float lateralSlip = localVel.x;
-        float speedFactor = Mathf.Clamp01(Mathf.Abs(localVel.z) / 5f);
-
-        // Rear kicks out opposite to steer only when grounded and actually sliding
-        float targetYaw = isGrounded
-            ? steerInput * maxDriftYaw * speedFactor
-              * Mathf.Clamp01(Mathf.Abs(lateralSlip) / 2f)
-            : 0f;
-
-        currentDriftYaw = Mathf.Lerp(
-            currentDriftYaw,
-            targetYaw,
-            Time.deltaTime * (Mathf.Abs(targetYaw) > 0.1f
-                ? driftYawSpeed
-                : driftYawReturnSpeed)
-        );
-
-        Vector3 euler = carVisuals.localEulerAngles;
-        carVisuals.localEulerAngles = new Vector3(
-            euler.x,
-            currentDriftYaw,
-            euler.z
-        );
-    }
     public void OnMove(InputValue value)
     {
-        var input = value.Get<Vector2>();
+        Vector2 input = value.Get<Vector2>();
         steerInput = input.x;
         throttleInput = input.y;
     }
 
     public void OnJump(InputValue value)
     {
-        if (!value.isPressed) return;
-
-        if (isGrounded)
-        {
-            jumpCount = 1; jumpRequested = true;
-            isDoubleJumping = false; wingsClosed = false;
-        }
-        else if (jumpCount == 1)
-        {
-            jumpCount = 2; isDoubleJumping = true; wingJumpRequested = true;
-        }
-        else if (jumpCount == 2)
-        {
-            jumpCount = 3; isDoubleJumping = false; wingsClosed = true;
-            rb.linearVelocity = new Vector3(rb.linearVelocity.x, 0f, rb.linearVelocity.z);
-            rb.AddForce(Vector3.down * 10f, ForceMode.VelocityChange);
-        }
+        if (value.isPressed)
+            jumpRequested = true;
     }
+
+    public void OnBoost(InputValue value)
+    {
+        if (value.isPressed)
+            TryActivateBoost();
+    }
+
+    // =========================
+    // FIXED UPDATE
+    // =========================
 
     void FixedUpdate()
     {
         CheckGrounded();
         ApplyMovement();
         ApplySteering();
+        ApplyGrip();
         ApplyDownforce();
         ApplyJump();
-        ApplyWingJump();
+
+        if (!GetComponent<CarFlip>()?.enabled ?? false) // only if no flip active
+            ApplyBodyTilt();
+
+        
+        // Landing squish
+        GetComponent<WheelVisuals>()?.PlayLandingWobble();
+        if (isGrounded && !wasGroundedPrev && carVisuals != null)
+        {
+            carVisuals.DOKill();
+            carVisuals.DOScaleY(0.65f, 0.07f).SetEase(Ease.OutQuad)
+                .OnComplete(() =>
+                    carVisuals.DOScaleY(1.1f, 0.12f).SetEase(Ease.OutBack)
+                        .OnComplete(() =>
+                            carVisuals.DOScaleY(1f, 0.1f).SetEase(Ease.InOutSine)));
+        }
+        wasGroundedPrev = isGrounded;
+
+        if (isBoosting)
+        {
+            boostTimer -= Time.fixedDeltaTime;
+            if (boostTimer <= 0f)
+            {
+                isBoosting = false;
+                cooldownTimer = boostCooldown;
+            }
+        }
+        else if (cooldownTimer > 0f)
+        {
+            cooldownTimer -= Time.fixedDeltaTime;
+        }
     }
 
-    void CheckGrounded()
+    
+    void Update()
     {
-        if (groundCheck == null) return;
-        isGrounded = Physics.CheckSphere(groundCheck.position, groundCheckRadius, groundLayer, QueryTriggerInteraction.Ignore);
+        
+        if (carFlip == null || !carFlip.IsFlipping)
+            ApplyBodyTilt();
     }
+
+    // =========================
+    // MOVEMENT
+    // =========================
 
     void ApplyMovement()
     {
-        float throttle = autoAccelerate ? autoThrottle : throttleInput;
-        float force = throttle > 0 ? acceleration : brakeForce;
-        if (throttle != 0) rb.AddForce(transform.forward * throttle * force, ForceMode.Acceleration);
+        float finalThrottle = autoAccelerate ? autoThrottle : throttleInput;
 
-        Vector3 flat = new Vector3(rb.linearVelocity.x, 0, rb.linearVelocity.z);
-        if (flat.magnitude > maxSpeed)
+        /*if (finalThrottle > 0)
         {
-            Vector3 capped = flat.normalized * maxSpeed;
-            rb.linearVelocity = new Vector3(capped.x, rb.linearVelocity.y, capped.z);
+            rb.AddForce(
+                transform.forward * finalThrottle * acceleration,
+                ForceMode.Acceleration
+            );
+        }*/
+
+        if (finalThrottle > 0)
+        {
+            float boostMult = isBoosting ? boostMultiplier : 1f;
+            rb.AddForce(
+                transform.forward * finalThrottle * acceleration * boostMult,
+                ForceMode.Acceleration
+            );
+        }
+        else if (finalThrottle < 0)
+        {
+            rb.AddForce(
+                transform.forward * finalThrottle * brakeForce,
+                ForceMode.Acceleration
+            );
+        }
+
+        Vector3 flatVel = new Vector3(rb.linearVelocity.x, 0, rb.linearVelocity.z);
+
+        /*if (flatVel.magnitude > maxSpeed)
+        {
+            Vector3 limitedVel = flatVel.normalized * maxSpeed;
+            rb.linearVelocity = new Vector3(
+                limitedVel.x,
+                rb.linearVelocity.y,
+                limitedVel.z
+            );
+        }*/
+        float currentMaxSpeed = isBoosting ? maxSpeed * boostMultiplier : maxSpeed;
+        if (flatVel.magnitude > currentMaxSpeed)
+        {
+            Vector3 limitedVel = flatVel.normalized * currentMaxSpeed;
+            rb.linearVelocity = new Vector3(limitedVel.x, rb.linearVelocity.y, limitedVel.z);
         }
     }
+
+    // =========================
+    // STEERING
+    // =========================
 
     void ApplySteering()
     {
-        float turnAmount = steerInput * turnSpeed * Time.fixedDeltaTime;
+        float speedFactor = rb.linearVelocity.magnitude / maxSpeed;
+        float steerAmount = steerInput * turnSpeed * speedFactor;
 
-        if (isGrounded)
-        {
-            // Scale turn by speed
-            turnAmount *= rb.linearVelocity.magnitude / maxSpeed;
-            Quaternion turnRot = Quaternion.Euler(0f, turnAmount, 0f);
-            rb.MoveRotation(rb.rotation * turnRot);
+        Quaternion turnRot = Quaternion.Euler(
+            0f,
+            steerAmount * Time.fixedDeltaTime,
+            0f
+        );
 
-            // Rotate flat velocity with car — eliminates shake
-            Vector3 flat = new Vector3(rb.linearVelocity.x, 0f, rb.linearVelocity.z);
-            Vector3 rotated = turnRot * flat;
-            rb.linearVelocity = new Vector3(rotated.x, rb.linearVelocity.y, rotated.z);
-
-            // Grip — kill remaining sideways slip
-            Vector3 local = transform.InverseTransformDirection(rb.linearVelocity);
-            local.x = Mathf.Lerp(local.x, 0f, grip * Time.fixedDeltaTime * 60f);
-            rb.linearVelocity = transform.TransformDirection(local);
-        }
-        else
-        {
-            // Air — lateral force + gentle rotation
-            rb.AddForce(transform.right * steerInput * airSteerForce, ForceMode.Acceleration);
-            rb.MoveRotation(rb.rotation * Quaternion.Euler(0f, turnAmount * 0.4f, 0f));
-        }
+        rb.MoveRotation(rb.rotation * turnRot);
     }
+
+    // =========================
+    // GRIP
+    // =========================
+
+    void ApplyGrip()
+    {
+        Vector3 localVel = transform.InverseTransformDirection(rb.linearVelocity);
+        localVel.x *= (1f - grip);
+        rb.linearVelocity = transform.TransformDirection(localVel);
+
+        rb.linearVelocity = Vector3.Lerp(
+            rb.linearVelocity,
+            transform.forward * rb.linearVelocity.magnitude,
+            steeringAssist
+        );
+    }
+
+    // =========================
+    // DOWNFORCE
+    // =========================
 
     void ApplyDownforce()
     {
         if (!isGrounded) return;
+
         rb.AddForce(Vector3.down * downforce * rb.linearVelocity.magnitude);
         rb.AddForce(Vector3.down * extraGravity);
     }
 
+    // =========================
+    // GROUND CHECK
+    // =========================
+
+    void CheckGrounded()
+    {
+        if (groundCheck == null) return;
+
+        isGrounded = Physics.CheckSphere(
+            groundCheck.position,
+            groundCheckRadius,
+            groundLayer,
+            QueryTriggerInteraction.Ignore
+        );
+    }
+
+    // =========================
+    // JUMP
+    // =========================
+
+    /*void ApplyJump()
+    {
+        if (jumpRequested && isGrounded)
+        {
+            rb.AddForce(
+                Vector3.up * jumpForce,
+                ForceMode.VelocityChange
+            );
+            jumpRequested = false;
+        }
+        else if (!isGrounded)
+        {
+            jumpRequested = false;
+        }
+    }*/
+
     void ApplyJump()
     {
         if (jumpRequested && isGrounded)
-            rb.AddForce(Vector3.up * jumpForce, ForceMode.VelocityChange);
-
-        jumpRequested = false;
-
-        if (isGrounded && !wasGroundedLastFrame)
         {
-            jumpCount = 0; isDoubleJumping = false; wingsClosed = false;
+            rb.AddForce(Vector3.up * jumpForce, ForceMode.VelocityChange);
+            jumpRequested = false;
+
+            // Squash on launch: squish down then spring up
+            if (carVisuals != null)
+            {
+                carVisuals.DOKill();
+                carVisuals.DOScaleY(0.6f, 0.08f).SetEase(Ease.OutQuad)
+                    .OnComplete(() =>
+                        carVisuals.DOScaleY(1.15f, 0.15f).SetEase(Ease.OutBack)
+                            .OnComplete(() =>
+                                carVisuals.DOScaleY(1f, 0.1f).SetEase(Ease.InOutSine)));
+            }
         }
-
-        wasGroundedLastFrame = isGrounded;
+        else if (!isGrounded)
+        {
+            jumpRequested = false;
+        }
     }
 
-    void ApplyWingJump()
+    /*void ApplyBodyTilt()
     {
-        if (!wingJumpRequested) return;
-        wingJumpRequested = false;
-        rb.linearVelocity = new Vector3(rb.linearVelocity.x, 0f, rb.linearVelocity.z);
-        rb.AddForce(Vector3.up * wingJumpForce, ForceMode.VelocityChange);
-        rb.AddForce(transform.forward * wingForwardBoost, ForceMode.VelocityChange);
+        if (carVisuals == null) return;
+
+        float targetZ = -steerInput * bodyTiltAngle; // lean into turn
+        Vector3 current = carVisuals.localEulerAngles;
+        float currentZ = current.z > 180f ? current.z - 360f : current.z;
+        float newZ = Mathf.LerpAngle(currentZ, targetZ, Time.fixedDeltaTime * bodyTiltSpeed);
+        carVisuals.localEulerAngles = new Vector3(current.x, current.y, newZ);
+    }*/
+
+    void ApplyBodyTilt()
+    {
+        if (carVisuals == null) return;
+
+        float targetZ = -steerInput * bodyTiltAngle;
+        Vector3 current = carVisuals.localEulerAngles;
+        float currentZ = current.z > 180f ? current.z - 360f : current.z;
+        float newZ = Mathf.LerpAngle(currentZ, targetZ, Time.deltaTime * bodyTiltSpeed);
+        carVisuals.localEulerAngles = new Vector3(current.x, current.y, newZ);
     }
+
+    void TryActivateBoost()
+    {
+        if (isBoosting || cooldownTimer > 0f) return;
+        isBoosting = true;
+        boostTimer = boostDuration;
+    }
+
+
 }
