@@ -6937,6 +6937,10 @@ PrefabInstance:
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5875627551958643593, guid: d51ea43b84d47e640a1a76973419c278, type: 3}
+      propertyPath: downforce
+      value: 30
+      objectReference: {fileID: 0}
+    - target: {fileID: 5875627551958643593, guid: d51ea43b84d47e640a1a76973419c278, type: 3}
       propertyPath: jumpForce
       value: 10
       objectReference: {fileID: 0}
@@ -6949,6 +6953,7 @@ PrefabInstance:
       value: -4
       objectReference: {fileID: 0}
     - target: {fileID: 5875627551958643593, guid: d51ea43b84d47e640a1a76973419c278, type: 3}
+<<<<<<< Updated upstream
       propertyPath: boostCooldown
       value: 3
       objectReference: {fileID: 0}
@@ -6959,6 +6964,14 @@ PrefabInstance:
     - target: {fileID: 5875627551958643593, guid: d51ea43b84d47e640a1a76973419c278, type: 3}
       propertyPath: boostMultiplier
       value: 1.6
+=======
+      propertyPath: carVisuals
+      value: 
+      objectReference: {fileID: 524748707}
+    - target: {fileID: 5875627551958643593, guid: d51ea43b84d47e640a1a76973419c278, type: 3}
+      propertyPath: wingJumpForce
+      value: 20
+>>>>>>> Stashed changes
       objectReference: {fileID: 0}
     - target: {fileID: 6306743270488904552, guid: d51ea43b84d47e640a1a76973419c278, type: 3}
       propertyPath: m_Mesh
