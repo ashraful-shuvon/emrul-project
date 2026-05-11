@@ -9,7 +9,6 @@ public class WheelVisuals : MonoBehaviour
         public Transform mesh;
         public bool flipY = false;
         public bool steers = false;
-        // Cached local pose when leaving ground
         [HideInInspector] public Vector3 lastLocalPos;
         [HideInInspector] public Quaternion lastLocalRot;
     }
@@ -27,11 +26,13 @@ public class WheelVisuals : MonoBehaviour
 
     private Rigidbody rb;
     private ArcadeRunnerCarController carController;
+    private CarFlip carFlip;
 
     void Awake()
     {
         rb = GetComponent<Rigidbody>();
         carController = GetComponent<ArcadeRunnerCarController>();
+        carFlip = GetComponent<CarFlip>();
     }
 
     void Update()
@@ -40,8 +41,6 @@ public class WheelVisuals : MonoBehaviour
 
         if (!carController.IsGrounded)
         {
-            // In air — lock wheels to last known local pose
-            // They follow CarVisuals naturally as children
             ApplyLocalPose(frontLeft);
             ApplyLocalPose(frontRight);
             ApplyLocalPose(rearLeft);
@@ -49,7 +48,6 @@ public class WheelVisuals : MonoBehaviour
             return;
         }
 
-        // Grounded — update normally and cache local pose
         UpdateWheel(frontLeft);
         UpdateWheel(frontRight);
         UpdateWheel(rearLeft);
@@ -72,8 +70,8 @@ public class WheelVisuals : MonoBehaviour
 
         wheel.collider.GetWorldPose(out Vector3 position, out Quaternion rotation);
 
-        // Apply drift yaw offset
-        float yawOffset = carController.currentDriftYaw;
+        // Apply drift yaw offset from CarFlip
+        float yawOffset = carFlip != null ? carFlip.currentDriftYaw : 0f;
         if (Mathf.Abs(yawOffset) > 0.01f)
         {
             Vector3 localPos = transform.InverseTransformPoint(position);
@@ -103,7 +101,7 @@ public class WheelVisuals : MonoBehaviour
 
         wheel.mesh.rotation = rotation;
 
-        // Cache local pose for air use
+        // Cache local pose for air
         wheel.lastLocalPos = wheel.mesh.localPosition;
         wheel.lastLocalRot = wheel.mesh.localRotation;
     }

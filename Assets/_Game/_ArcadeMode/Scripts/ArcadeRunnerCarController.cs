@@ -35,16 +35,6 @@ public class ArcadeRunnerCarController : MonoBehaviour
     public float groundCheckRadius = 0.2f;
     public LayerMask groundLayer;
 
-    [Header("Visuals")]
-    public Transform carVisuals;
-
-    [Header("Drift Yaw")]
-    public float maxDriftYaw = 15f;
-    public float driftYawSpeed = 5f;
-    public float driftYawReturnSpeed = 4f;
-
-    [HideInInspector] public float currentDriftYaw = 0f;
-
     public bool IsGrounded => isGrounded;
     [HideInInspector] public float steerInput;
     [HideInInspector] public bool isDoubleJumping;
@@ -63,36 +53,6 @@ public class ArcadeRunnerCarController : MonoBehaviour
         if (groundLayer.value == 0) groundLayer = LayerMask.GetMask("Ground");
     }
 
-    void Update()
-    {
-        if (carVisuals == null) return;
-
-        // Get lateral slip
-        Vector3 localVel = transform.InverseTransformDirection(rb.linearVelocity);
-        float lateralSlip = localVel.x;
-        float speedFactor = Mathf.Clamp01(Mathf.Abs(localVel.z) / 5f);
-
-        // Rear kicks out opposite to steer only when grounded and actually sliding
-        float targetYaw = isGrounded
-            ? steerInput * maxDriftYaw * speedFactor
-              * Mathf.Clamp01(Mathf.Abs(lateralSlip) / 2f)
-            : 0f;
-
-        currentDriftYaw = Mathf.Lerp(
-            currentDriftYaw,
-            targetYaw,
-            Time.deltaTime * (Mathf.Abs(targetYaw) > 0.1f
-                ? driftYawSpeed
-                : driftYawReturnSpeed)
-        );
-
-        Vector3 euler = carVisuals.localEulerAngles;
-        carVisuals.localEulerAngles = new Vector3(
-            euler.x,
-            currentDriftYaw,
-            euler.z
-        );
-    }
     public void OnMove(InputValue value)
     {
         var input = value.Get<Vector2>();
@@ -134,14 +94,18 @@ public class ArcadeRunnerCarController : MonoBehaviour
     void CheckGrounded()
     {
         if (groundCheck == null) return;
-        isGrounded = Physics.CheckSphere(groundCheck.position, groundCheckRadius, groundLayer, QueryTriggerInteraction.Ignore);
+        isGrounded = Physics.CheckSphere(
+            groundCheck.position, groundCheckRadius,
+            groundLayer, QueryTriggerInteraction.Ignore
+        );
     }
 
     void ApplyMovement()
     {
         float throttle = autoAccelerate ? autoThrottle : throttleInput;
         float force = throttle > 0 ? acceleration : brakeForce;
-        if (throttle != 0) rb.AddForce(transform.forward * throttle * force, ForceMode.Acceleration);
+        if (throttle != 0)
+            rb.AddForce(transform.forward * throttle * force, ForceMode.Acceleration);
 
         Vector3 flat = new Vector3(rb.linearVelocity.x, 0, rb.linearVelocity.z);
         if (flat.magnitude > maxSpeed)
@@ -157,24 +121,22 @@ public class ArcadeRunnerCarController : MonoBehaviour
 
         if (isGrounded)
         {
-            // Scale turn by speed
             turnAmount *= rb.linearVelocity.magnitude / maxSpeed;
             Quaternion turnRot = Quaternion.Euler(0f, turnAmount, 0f);
             rb.MoveRotation(rb.rotation * turnRot);
 
-            // Rotate flat velocity with car — eliminates shake
+            // Rotate flat velocity with car — keeps velocity aligned
             Vector3 flat = new Vector3(rb.linearVelocity.x, 0f, rb.linearVelocity.z);
             Vector3 rotated = turnRot * flat;
             rb.linearVelocity = new Vector3(rotated.x, rb.linearVelocity.y, rotated.z);
 
-            // Grip — kill remaining sideways slip
+            // Grip runs after rotation — no fighting
             Vector3 local = transform.InverseTransformDirection(rb.linearVelocity);
             local.x = Mathf.Lerp(local.x, 0f, grip * Time.fixedDeltaTime * 60f);
             rb.linearVelocity = transform.TransformDirection(local);
         }
         else
         {
-            // Air — lateral force + gentle rotation
             rb.AddForce(transform.right * steerInput * airSteerForce, ForceMode.Acceleration);
             rb.MoveRotation(rb.rotation * Quaternion.Euler(0f, turnAmount * 0.4f, 0f));
         }
