@@ -23,15 +23,6 @@
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": false
-                },
-                {
-                    "name": "Boost",
-                    "type": "Button",
-                    "id": "44ba4e20-fb1d-4711-8371-f374db2f21b5",
-                    "expectedControlType": "",
-                    "processors": "",
-                    "interactions": "",
-                    "initialStateCheck": false
                 }
             ],
             "bindings": [
@@ -76,17 +67,6 @@
                     "processors": "",
                     "groups": "",
                     "action": "Jump",
-                    "isComposite": false,
-                    "isPartOfComposite": false
-                },
-                {
-                    "name": "",
-                    "id": "a0dec143-8a52-4809-9c9f-df5517058c40",
-                    "path": "<Keyboard>/leftShift",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": "",
-                    "action": "Boost",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

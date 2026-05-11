@@ -1,6 +1,5 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
-using DG.Tweening;
 
 public class CarFlip : MonoBehaviour
 {
@@ -10,6 +9,9 @@ public class CarFlip : MonoBehaviour
     [Header("Flip Settings")]
     public float flipSpeed = 720f;
 
+    [HideInInspector] public bool flipDisabled = false;
+    public bool IsFlipping => isFlipping;
+
     private ArcadeRunnerCarController carController;
     private WheelVisuals wheelVisuals;
 
@@ -18,7 +20,6 @@ public class CarFlip : MonoBehaviour
     private float flipAngleDone = 0f;
     private float flipDirection = 0f;
     private bool wasGrounded = true;
-    public bool IsFlipping => isFlipping;
 
     void Awake()
     {
@@ -29,6 +30,8 @@ public class CarFlip : MonoBehaviour
     public void OnJump(InputValue value)
     {
         if (!value.isPressed) return;
+        if (flipDisabled) return;
+        if (!carController.IsGrounded) return; // only on first jump from ground
 
         float steer = carController.steerInput;
 
@@ -41,16 +44,6 @@ public class CarFlip : MonoBehaviour
         hasFlippedThisJump = true;
         flipAngleDone = 0f;
 
-        // REPLACE with:
-        if (carVisuals != null)
-        {
-            carVisuals.DOKill();
-            carVisuals.localScale = Vector3.one; // reset before punch so it always starts clean
-            carVisuals.DOPunchScale(new Vector3(0.2f, -0.3f, 0.2f), 0.25f, 5, 0.5f)
-                .OnComplete(() => carVisuals.localScale = Vector3.one);
-        }
-
-        // Tell WheelVisuals to stop overriding meshes
         if (wheelVisuals != null)
             wheelVisuals.isFlipping = true;
     }
@@ -63,14 +56,12 @@ public class CarFlip : MonoBehaviour
         {
             hasFlippedThisJump = false;
 
-            // Snap roll back to zero on landing
             if (carVisuals != null)
             {
                 Vector3 e = carVisuals.localEulerAngles;
                 carVisuals.localEulerAngles = new Vector3(e.x, e.y, 0f);
             }
 
-            // Resume wheel visuals
             if (wheelVisuals != null)
                 wheelVisuals.isFlipping = false;
         }
@@ -85,21 +76,13 @@ public class CarFlip : MonoBehaviour
     {
         if (carVisuals == null) return;
 
-        float step = flipSpeed * Time.deltaTime;
-        flipAngleDone += step;
-
-        if (carVisuals != null)
-        {
-            carVisuals.DOKill();
-            carVisuals.localScale = Vector3.one; // hard reset after flip done
-        }
+        flipAngleDone += flipSpeed * Time.deltaTime;
 
         if (flipAngleDone >= 360f)
         {
             isFlipping = false;
             flipAngleDone = 0f;
 
-            // Snap to zero and resume wheels
             Vector3 e = carVisuals.localEulerAngles;
             carVisuals.localEulerAngles = new Vector3(e.x, e.y, 0f);
 

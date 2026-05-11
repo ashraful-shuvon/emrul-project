@@ -1,5 +1,4 @@
 using UnityEngine;
-using DG.Tweening;
 
 public class WheelVisuals : MonoBehaviour
 {
@@ -107,20 +106,5 @@ public class WheelVisuals : MonoBehaviour
         // Cache local pose for air use
         wheel.lastLocalPos = wheel.mesh.localPosition;
         wheel.lastLocalRot = wheel.mesh.localRotation;
-    }
-
-    public void PlayLandingWobble()
-    {
-        WobbleWheel(frontLeft.mesh);
-        WobbleWheel(frontRight.mesh);
-        WobbleWheel(rearLeft.mesh);
-        WobbleWheel(rearRight.mesh);
-    }
-
-    void WobbleWheel(Transform mesh)
-    {
-        if (mesh == null) return;
-        mesh.DOKill();
-        mesh.DOPunchPosition(Vector3.up * 0.06f, 0.2f, 6, 0.4f);
     }
 }
