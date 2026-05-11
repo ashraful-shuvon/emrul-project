@@ -6660,6 +6660,22 @@ PrefabInstance:
       propertyPath: carVisuals
       value: 
       objectReference: {fileID: 524748707}
+    - target: {fileID: 3043118456115345326, guid: d51ea43b84d47e640a1a76973419c278, type: 3}
+      propertyPath: m_Enabled
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3043118456115345326, guid: d51ea43b84d47e640a1a76973419c278, type: 3}
+      propertyPath: m_Material
+      value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 3043118456115345326, guid: d51ea43b84d47e640a1a76973419c278, type: 3}
+      propertyPath: m_IsTrigger
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3043534370431778522, guid: d51ea43b84d47e640a1a76973419c278, type: 3}
+      propertyPath: m_Enabled
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 3128965305720770227, guid: d51ea43b84d47e640a1a76973419c278, type: 3}
       propertyPath: m_Enabled
       value: 0
@@ -6729,6 +6745,10 @@ PrefabInstance:
       value: 250
       objectReference: {fileID: 0}
     - target: {fileID: 5875627551958643593, guid: d51ea43b84d47e640a1a76973419c278, type: 3}
+      propertyPath: carVisuals
+      value: 
+      objectReference: {fileID: 524748707}
+    - target: {fileID: 5875627551958643593, guid: d51ea43b84d47e640a1a76973419c278, type: 3}
       propertyPath: wingJumpForce
       value: 30
       objectReference: {fileID: 0}
@@ -6791,6 +6811,10 @@ PrefabInstance:
     - target: {fileID: 8280510121763580450, guid: d51ea43b84d47e640a1a76973419c278, type: 3}
       propertyPath: m_Mass
       value: 1200
+      objectReference: {fileID: 0}
+    - target: {fileID: 8280510121763580450, guid: d51ea43b84d47e640a1a76973419c278, type: 3}
+      propertyPath: m_IsKinematic
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8512915028001360465, guid: d51ea43b84d47e640a1a76973419c278, type: 3}
       propertyPath: m_Enabled
