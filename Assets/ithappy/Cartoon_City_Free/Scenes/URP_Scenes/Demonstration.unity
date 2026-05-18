@@ -3750,6 +3750,28 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 4618557416055468906, guid: 211ee66cf2cc2f444b0ad19bae4e999a, type: 3}
   m_PrefabInstance: {fileID: 335797895}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &339401265 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 2805070374093002949, guid: d5b8ed42ec20e9749aa927fc60775757, type: 3}
+  m_PrefabInstance: {fileID: 483688449}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &339401274
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 339401265}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fa2fabb62236069489945a9e3481d083, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DriftParticles
+  driftLeft: {fileID: 1715745825}
+  driftRight: {fileID: 1462156197}
+  steerThreshold: 0.3
+  speedThreshold: 5
+  cooldown: 3
 --- !u!1001 &360684900
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -5560,6 +5582,38 @@ PrefabInstance:
       propertyPath: m_Enabled
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 5675108078923967003, guid: d5b8ed42ec20e9749aa927fc60775757, type: 3}
+      propertyPath: looping
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5675108078923967003, guid: d5b8ed42ec20e9749aa927fc60775757, type: 3}
+      propertyPath: prewarm
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5675108078923967003, guid: d5b8ed42ec20e9749aa927fc60775757, type: 3}
+      propertyPath: stopAction
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5675108078923967003, guid: d5b8ed42ec20e9749aa927fc60775757, type: 3}
+      propertyPath: lengthInSec
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 5804988479717491288, guid: d5b8ed42ec20e9749aa927fc60775757, type: 3}
+      propertyPath: looping
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5804988479717491288, guid: d5b8ed42ec20e9749aa927fc60775757, type: 3}
+      propertyPath: prewarm
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5804988479717491288, guid: d5b8ed42ec20e9749aa927fc60775757, type: 3}
+      propertyPath: stopAction
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5804988479717491288, guid: d5b8ed42ec20e9749aa927fc60775757, type: 3}
+      propertyPath: lengthInSec
+      value: 3
+      objectReference: {fileID: 0}
     - target: {fileID: 6352094868348310023, guid: d5b8ed42ec20e9749aa927fc60775757, type: 3}
       propertyPath: m_Enabled
       value: 0
@@ -5648,7 +5702,10 @@ PrefabInstance:
     m_RemovedGameObjects:
     - {fileID: 2805136090879549066, guid: d5b8ed42ec20e9749aa927fc60775757, type: 3}
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 2805070374093002949, guid: d5b8ed42ec20e9749aa927fc60775757, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 339401274}
   m_SourcePrefab: {fileID: 100100000, guid: d5b8ed42ec20e9749aa927fc60775757, type: 3}
 --- !u!1001 &498915258
 PrefabInstance:
@@ -16379,6 +16436,11 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 5658721572326524349, guid: e00c741ddd48e2c43adc6f82eba5abee, type: 3}
   m_PrefabInstance: {fileID: 1453163039}
   m_PrefabAsset: {fileID: 0}
+--- !u!198 &1462156197 stripped
+ParticleSystem:
+  m_CorrespondingSourceObject: {fileID: 5804988479717491288, guid: d5b8ed42ec20e9749aa927fc60775757, type: 3}
+  m_PrefabInstance: {fileID: 483688449}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &1473620924
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -18618,6 +18680,11 @@ PrefabInstance:
 Transform:
   m_CorrespondingSourceObject: {fileID: 2102775146522268884, guid: 480f39d1342ac8b4d97b7ee06b16427b, type: 3}
   m_PrefabInstance: {fileID: 1714258443}
+  m_PrefabAsset: {fileID: 0}
+--- !u!198 &1715745825 stripped
+ParticleSystem:
+  m_CorrespondingSourceObject: {fileID: 5675108078923967003, guid: d5b8ed42ec20e9749aa927fc60775757, type: 3}
+  m_PrefabInstance: {fileID: 483688449}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &1732616007
 PrefabInstance:
