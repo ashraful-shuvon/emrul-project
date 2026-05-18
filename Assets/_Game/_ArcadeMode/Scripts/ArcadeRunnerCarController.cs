@@ -24,6 +24,7 @@ public class ArcadeRunnerCarController : MonoBehaviour
     [Header("Stability")]
     public float downforce = 20f;
     public float extraGravity = 30f;
+    public float wingFoldGravity = 40f;
 
     [Header("Jumping")]
     public float jumpForce = 8f;
@@ -144,9 +145,32 @@ public class ArcadeRunnerCarController : MonoBehaviour
 
     void ApplyDownforce()
     {
-        if (!isGrounded) return;
-        rb.AddForce(Vector3.down * downforce * rb.linearVelocity.magnitude);
+        // Always apply extra gravity for weight
         rb.AddForce(Vector3.down * extraGravity);
+
+        // Grounded — full downforce
+        if (isGrounded)
+        {
+            rb.AddForce(Vector3.down * downforce * rb.linearVelocity.magnitude);
+            return;
+        }
+
+        // Double jumping + steering = smooth fall, wings stay open
+        if (isDoubleJumping && Mathf.Abs(steerInput) > 0.1f)
+        {
+            // Kill upward velocity instantly
+            if (rb.linearVelocity.y > 0)
+            {
+                rb.linearVelocity = new Vector3(
+                    rb.linearVelocity.x,
+                    0f,
+                    rb.linearVelocity.z
+                );
+            }
+
+            // Pull down smoothly
+            rb.AddForce(Vector3.down * wingFoldGravity, ForceMode.Acceleration);
+        }
     }
 
     void ApplyJump()
