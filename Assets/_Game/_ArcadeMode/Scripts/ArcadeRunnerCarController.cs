@@ -14,8 +14,8 @@ public class ArcadeRunnerCarController : MonoBehaviour
     public float brakeForce = 40f;
 
     [Header("Air Acceleration")]
-    [Range(0f, 1f)]
-    public float airAccelMultiplier = 0.5f;
+    [Range(0f, 2f)]
+    public float airAccelMultiplier = 1.2f;
 
     [Header("Steering")]
     public float turnSpeed = 200f;
@@ -27,18 +27,30 @@ public class ArcadeRunnerCarController : MonoBehaviour
 
     [Header("Stability")]
     public float downforce = 20f;
-    public float extraGravity = 30f;
-    public float wingFoldGravity = 40f;
+    public float extraGravity = 15f;
+    public float wingFoldGravity = 25f;
 
-    [Header("Jumping")]
-    public float jumpForce = 8f;
-    public float wingJumpForce = 12f;
+    [Header("Jumping & Soft Slam")]
+    public float jumpForce = 11f;
+    public float wingJumpForce = 30f;
     public float wingForwardBoost = 15f;
+    public float smoothSlamTargetSpeed = -12f;
 
-    [Header("Ground Check")]
+    [Header("Wing Fall Settings")]
+    public float wingFallGravity = 20f;
+
+    [Header("Ground Check & Stable Landing")]
     public Transform groundCheck;
-    public float groundCheckRadius = 0.2f;
+    public float groundCheckRadius = 0.3f;
     public LayerMask groundLayer;
+    public float groundAlignmentSpeed = 12f;
+    public float landingGlueForce = 15f;
+
+    [Header("Visual Weight Transfer")]
+    public Transform carVisualModel;
+    public float pitchAmount = 0f;
+    public float rollAmount = 0f;
+    public float tiltSpeed = 10f;
 
     public bool IsGrounded => isGrounded;
     [HideInInspector] public float steerInput;
@@ -49,16 +61,24 @@ public class ArcadeRunnerCarController : MonoBehaviour
     private float throttleInput;
     private bool isGrounded, jumpRequested, wingJumpRequested, wasGroundedLastFrame;
     private int jumpCount;
+    private float currentGroundProximity = 1f;
+    private bool wingFalling = false;
+
+    // =========================
+    // INIT
+    // =========================
 
     void Awake()
     {
         rb = GetComponent<Rigidbody>();
-        rb.centerOfMass = new Vector3(0, -0.5f, 0);
-        rb.constraints = RigidbodyConstraints.FreezeRotationX |
-                         RigidbodyConstraints.FreezeRotationZ;
+        rb.centerOfMass = new Vector3(0, -0.5f, 0f);
         if (groundLayer.value == 0)
             groundLayer = LayerMask.GetMask("Ground");
     }
+
+    // =========================
+    // INPUT
+    // =========================
 
     public void OnMove(InputValue value)
     {
@@ -75,18 +95,27 @@ public class ArcadeRunnerCarController : MonoBehaviour
         {
             jumpCount = 1; jumpRequested = true;
             isDoubleJumping = false; wingsClosed = false;
+            wingFalling = false;
         }
         else if (jumpCount == 1)
         {
-            jumpCount = 2; isDoubleJumping = true; wingJumpRequested = true;
+            jumpCount = 2; isDoubleJumping = true;
+            wingJumpRequested = true;
+            wingFalling = false;
         }
         else if (jumpCount == 2)
         {
-            jumpCount = 3; isDoubleJumping = false; wingsClosed = true;
-            rb.linearVelocity = new Vector3(rb.linearVelocity.x, 0f, rb.linearVelocity.z);
-            rb.AddForce(Vector3.down * 10f, ForceMode.VelocityChange);
+            // Third press — smooth fall
+            jumpCount = 3;
+            isDoubleJumping = false;
+            wingsClosed = true;
+            wingFalling = true;
         }
     }
+
+    // =========================
+    // FIXED UPDATE
+    // =========================
 
     void FixedUpdate()
     {
@@ -96,16 +125,58 @@ public class ArcadeRunnerCarController : MonoBehaviour
         ApplyDownforce();
         ApplyJump();
         ApplyWingJump();
+        AlignToGroundProfile();
+
+        if (!isGrounded)
+        {
+            // Keep rotation flat in air
+            Vector3 currentAngles = rb.rotation.eulerAngles;
+            rb.MoveRotation(Quaternion.Euler(0f, currentAngles.y, 0f));
+
+            // In FixedUpdate replace the Y lock block with this
+            if (isDoubleJumping && !wingFalling)
+            {
+                // Only lock Y when car is falling — let it rise freely first
+                if (rb.linearVelocity.y < 0)
+                {
+                    rb.linearVelocity = new Vector3(
+                        rb.linearVelocity.x,
+                        0f,
+                        rb.linearVelocity.z
+                    );
+                }
+            }
+        }
     }
+
+    void LateUpdate()
+    {
+        ApplyVisualWeightTransfer();
+    }
+
+    // =========================
+    // GROUND CHECK
+    // =========================
 
     void CheckGrounded()
     {
         if (groundCheck == null) return;
+
         isGrounded = Physics.CheckSphere(
             groundCheck.position, groundCheckRadius,
             groundLayer, QueryTriggerInteraction.Ignore
         );
+
+        RaycastHit hit;
+        if (Physics.Raycast(transform.position, Vector3.down, out hit, 8f, groundLayer))
+            currentGroundProximity = Mathf.Clamp01((hit.distance - groundCheckRadius) / 6f);
+        else
+            currentGroundProximity = 1f;
     }
+
+    // =========================
+    // MOVEMENT
+    // =========================
 
     void ApplyMovement()
     {
@@ -122,6 +193,7 @@ public class ArcadeRunnerCarController : MonoBehaviour
         }
         else
         {
+            // Always accelerate in air — double jump flies forward freely
             if (throttle != 0)
                 rb.AddForce(
                     transform.forward * throttle * force * airAccelMultiplier,
@@ -129,13 +201,17 @@ public class ArcadeRunnerCarController : MonoBehaviour
                 );
         }
 
-        Vector3 flat = new Vector3(rb.linearVelocity.x, 0, rb.linearVelocity.z);
-        if (flat.magnitude > maxSpeed)
+        Vector3 flatVelocity = new Vector3(rb.linearVelocity.x, 0, rb.linearVelocity.z);
+        if (flatVelocity.magnitude > maxSpeed)
         {
-            Vector3 capped = flat.normalized * maxSpeed;
-            rb.linearVelocity = new Vector3(capped.x, rb.linearVelocity.y, capped.z);
+            Vector3 cappedFlat = flatVelocity.normalized * maxSpeed;
+            rb.linearVelocity = new Vector3(cappedFlat.x, rb.linearVelocity.y, cappedFlat.z);
         }
     }
+
+    // =========================
+    // STEERING
+    // =========================
 
     void ApplySteering()
     {
@@ -162,35 +238,75 @@ public class ArcadeRunnerCarController : MonoBehaviour
                 ForceMode.Acceleration
             );
             rb.MoveRotation(
-                rb.rotation * Quaternion.Euler(0f, turnAmount * 0.4f, 0f)
+                rb.rotation * Quaternion.Euler(0f, turnAmount * 0.5f, 0f)
             );
+
+            // Steer while double jumping = start falling
+            if (isDoubleJumping && Mathf.Abs(steerInput) > 0.1f && !wingFalling)
+                wingFalling = true;
         }
     }
 
+    // =========================
+    // DOWNFORCE
+    // =========================
+
     void ApplyDownforce()
     {
-        rb.AddForce(Vector3.down * extraGravity);
-
         if (isGrounded)
         {
             rb.AddForce(Vector3.down * downforce * rb.linearVelocity.magnitude);
             return;
         }
 
-        if (isDoubleJumping && Mathf.Abs(steerInput) > 0.1f)
+        // Double jumping and not falling — no gravity, car stays in air
+        if (isDoubleJumping && !wingFalling)
+            return;
+
+        // Smooth fall — triggered by steer or 3rd press
+        if (wingFalling)
         {
+            // Kill upward velocity first
             if (rb.linearVelocity.y > 0)
             {
                 rb.linearVelocity = new Vector3(
                     rb.linearVelocity.x,
-                    0f,
+                    Mathf.MoveTowards(
+                        rb.linearVelocity.y,
+                        0f,
+                        wingFoldGravity * Time.fixedDeltaTime
+                    ),
                     rb.linearVelocity.z
                 );
             }
 
-            rb.AddForce(Vector3.down * wingFoldGravity, ForceMode.Acceleration);
+            // Smoothly accelerate downward to target fall speed
+            float targetYVelocity = Mathf.MoveTowards(
+                rb.linearVelocity.y,
+                smoothSlamTargetSpeed,
+                Time.fixedDeltaTime * wingFallGravity
+            );
+
+            rb.linearVelocity = new Vector3(
+                rb.linearVelocity.x,
+                targetYVelocity,
+                rb.linearVelocity.z
+            );
+        }
+        else
+        {
+            // Normal single jump — light gravity
+            float dynamicGravityFactor = Mathf.Lerp(0.2f, 1f, currentGroundProximity);
+            rb.AddForce(
+                Vector3.down * extraGravity * dynamicGravityFactor,
+                ForceMode.Acceleration
+            );
         }
     }
+
+    // =========================
+    // JUMP
+    // =========================
 
     void ApplyJump()
     {
@@ -201,11 +317,29 @@ public class ArcadeRunnerCarController : MonoBehaviour
 
         if (isGrounded && !wasGroundedLastFrame)
         {
-            jumpCount = 0; isDoubleJumping = false; wingsClosed = false;
+            jumpCount = 0;
+            isDoubleJumping = false;
+            wingsClosed = false;
+            wingFalling = false;
+
+            rb.linearVelocity = new Vector3(rb.linearVelocity.x, 0f, rb.linearVelocity.z);
+
+            RaycastHit hit;
+            if (Physics.Raycast(transform.position, Vector3.down, out hit, groundCheckRadius + 2f, groundLayer))
+            {
+                Vector3 groundNormal = hit.normal;
+                Quaternion targetRot = Quaternion.FromToRotation(transform.up, groundNormal) * transform.rotation;
+                rb.MoveRotation(targetRot);
+                rb.AddForce(-groundNormal * landingGlueForce, ForceMode.VelocityChange);
+            }
         }
 
         wasGroundedLastFrame = isGrounded;
     }
+
+    // =========================
+    // WING JUMP
+    // =========================
 
     void ApplyWingJump()
     {
@@ -214,5 +348,43 @@ public class ArcadeRunnerCarController : MonoBehaviour
 
         rb.AddForce(Vector3.up * wingJumpForce, ForceMode.VelocityChange);
         rb.AddForce(transform.forward * wingForwardBoost, ForceMode.VelocityChange);
+    }
+
+    // =========================
+    // GROUND ALIGNMENT
+    // =========================
+
+    void AlignToGroundProfile()
+    {
+        if (!isGrounded) return;
+
+        RaycastHit hit;
+        if (Physics.Raycast(transform.position, Vector3.down, out hit, groundCheckRadius + 1.5f, groundLayer))
+        {
+            Vector3 groundNormal = hit.normal;
+            Quaternion targetRot = Quaternion.FromToRotation(transform.up, groundNormal) * transform.rotation;
+            rb.MoveRotation(Quaternion.Slerp(rb.rotation, targetRot, Time.fixedDeltaTime * groundAlignmentSpeed));
+        }
+    }
+
+    // =========================
+    // VISUAL WEIGHT TRANSFER
+    // =========================
+
+    void ApplyVisualWeightTransfer()
+    {
+        if (carVisualModel == null) return;
+
+        float targetPitch = (autoAccelerate ? autoThrottle : throttleInput) * -pitchAmount;
+        float targetRoll = steerInput * -rollAmount;
+
+        if (throttleInput < 0) targetPitch = pitchAmount * 1.5f;
+
+        Quaternion targetRotation = Quaternion.Euler(targetPitch, 0, targetRoll);
+        carVisualModel.localRotation = Quaternion.Slerp(
+            carVisualModel.localRotation,
+            targetRotation,
+            Time.deltaTime * tiltSpeed
+        );
     }
 }

@@ -3850,6 +3850,29 @@ MonoBehaviour:
   rightSmoke: {fileID: 394241484}
   steerThreshold: 0.3
   speedThreshold: 3
+--- !u!114 &339401284
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 339401265}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 55475ee1c5e2c8848962f8102b761939, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CarFlip
+  carVisuals: {fileID: 1849131978}
+  flipSpeed: 600
+  flipSmoothing: 30
+  maxAirLean: 10
+  airLeanSpeed: 5
+  airLeanReturnSpeed: 4
+  maxDriftYaw: 15
+  driftYawSpeed: 5
+  driftYawReturnSpeed: 4
+  flipDisabled: 0
+  currentDriftYaw: 0
 --- !u!1001 &360684900
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -5655,7 +5678,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1628531604137419324, guid: d5b8ed42ec20e9749aa927fc60775757, type: 3}
       propertyPath: flipSpeed
-      value: 600
+      value: 500
       objectReference: {fileID: 0}
     - target: {fileID: 1628531604137419324, guid: d5b8ed42ec20e9749aa927fc60775757, type: 3}
       propertyPath: maxAirLean
@@ -5731,38 +5754,58 @@ PrefabInstance:
       objectReference: {fileID: 2100000, guid: bc55c3d1adbcb0c458f787ae522d6e08, type: 2}
     - target: {fileID: 6682459630403296879, guid: d5b8ed42ec20e9749aa927fc60775757, type: 3}
       propertyPath: grip
-      value: 0.9
+      value: 0.95
       objectReference: {fileID: 0}
     - target: {fileID: 6682459630403296879, guid: d5b8ed42ec20e9749aa927fc60775757, type: 3}
       propertyPath: maxSpeed
-      value: 25
+      value: 20
+      objectReference: {fileID: 0}
+    - target: {fileID: 6682459630403296879, guid: d5b8ed42ec20e9749aa927fc60775757, type: 3}
+      propertyPath: downforce
+      value: 20
       objectReference: {fileID: 0}
     - target: {fileID: 6682459630403296879, guid: d5b8ed42ec20e9749aa927fc60775757, type: 3}
       propertyPath: jumpForce
-      value: 6
+      value: 11
       objectReference: {fileID: 0}
     - target: {fileID: 6682459630403296879, guid: d5b8ed42ec20e9749aa927fc60775757, type: 3}
       propertyPath: turnSpeed
-      value: 300
+      value: 200
+      objectReference: {fileID: 0}
+    - target: {fileID: 6682459630403296879, guid: d5b8ed42ec20e9749aa927fc60775757, type: 3}
+      propertyPath: groundCheck
+      value: 
       objectReference: {fileID: 0}
     - target: {fileID: 6682459630403296879, guid: d5b8ed42ec20e9749aa927fc60775757, type: 3}
       propertyPath: acceleration
-      value: 20
+      value: 30
+      objectReference: {fileID: 0}
+    - target: {fileID: 6682459630403296879, guid: d5b8ed42ec20e9749aa927fc60775757, type: 3}
+      propertyPath: extraGravity
+      value: 30
       objectReference: {fileID: 0}
     - target: {fileID: 6682459630403296879, guid: d5b8ed42ec20e9749aa927fc60775757, type: 3}
       propertyPath: airSteerForce
-      value: 50
+      value: 10
       objectReference: {fileID: 0}
     - target: {fileID: 6682459630403296879, guid: d5b8ed42ec20e9749aa927fc60775757, type: 3}
       propertyPath: wingJumpForce
-      value: 20
+      value: 40
+      objectReference: {fileID: 0}
+    - target: {fileID: 6682459630403296879, guid: d5b8ed42ec20e9749aa927fc60775757, type: 3}
+      propertyPath: carVisualModel
+      value: 
       objectReference: {fileID: 0}
     - target: {fileID: 6682459630403296879, guid: d5b8ed42ec20e9749aa927fc60775757, type: 3}
       propertyPath: wingFoldGravity
-      value: 5
+      value: 40
       objectReference: {fileID: 0}
     - target: {fileID: 6682459630403296879, guid: d5b8ed42ec20e9749aa927fc60775757, type: 3}
       propertyPath: wingForwardBoost
+      value: 15
+      objectReference: {fileID: 0}
+    - target: {fileID: 6682459630403296879, guid: d5b8ed42ec20e9749aa927fc60775757, type: 3}
+      propertyPath: groundLayer.m_Bits
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7226019978454711519, guid: d5b8ed42ec20e9749aa927fc60775757, type: 3}
@@ -5825,7 +5868,8 @@ PrefabInstance:
       propertyPath: m_AngularDamping
       value: 3
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 1628531604137419324, guid: d5b8ed42ec20e9749aa927fc60775757, type: 3}
     m_RemovedGameObjects:
     - {fileID: 2805136090879549066, guid: d5b8ed42ec20e9749aa927fc60775757, type: 3}
     m_AddedGameObjects: []
@@ -5836,6 +5880,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 2805070374093002949, guid: d5b8ed42ec20e9749aa927fc60775757, type: 3}
       insertIndex: -1
       addedObject: {fileID: 339401283}
+    - targetCorrespondingSourceObject: {fileID: 2805070374093002949, guid: d5b8ed42ec20e9749aa927fc60775757, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 339401284}
   m_SourcePrefab: {fileID: 100100000, guid: d5b8ed42ec20e9749aa927fc60775757, type: 3}
 --- !u!1001 &498915258
 PrefabInstance:
@@ -17220,7 +17267,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1964758634372531, guid: 1021e9e67f5ca13489595efb1b964071, type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4511322076974840, guid: 1021e9e67f5ca13489595efb1b964071, type: 3}
       propertyPath: m_LocalPosition.x
@@ -20171,6 +20218,11 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 4618557416055468906, guid: 211ee66cf2cc2f444b0ad19bae4e999a, type: 3}
   m_PrefabInstance: {fileID: 1848978160}
   m_PrefabAsset: {fileID: 0}
+--- !u!4 &1849131978 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 2378575071471359637, guid: d5b8ed42ec20e9749aa927fc60775757, type: 3}
+  m_PrefabInstance: {fileID: 483688449}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &1849377458
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -20395,7 +20447,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1964758634372531, guid: 1021e9e67f5ca13489595efb1b964071, type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4511322076974840, guid: 1021e9e67f5ca13489595efb1b964071, type: 3}
       propertyPath: m_LocalPosition.x

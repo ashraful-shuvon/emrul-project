@@ -8,6 +8,7 @@ public class CarFlip : MonoBehaviour
 
     [Header("Flip Settings")]
     public float flipSpeed = 720f;
+    public float flipSmoothing = 15f; // Helps smooth out the rotation if you land mid-flip
 
     [Header("Air Lean (Z)")]
     public float maxAirLean = 25f;
@@ -61,45 +62,36 @@ public class CarFlip : MonoBehaviour
             wheelVisuals.isFlipping = true;
     }
 
-    void Update()
+    void LateUpdate() // Changed from Update to LateUpdate for smoother physics syncing
     {
         bool grounded = carController.IsGrounded;
         float steer = carController.steerInput;
 
+        // 1. Handle Landing
         if (grounded && !wasGrounded)
         {
             hasFlippedThisJump = false;
+            isFlipping = false;
             if (wheelVisuals != null)
                 wheelVisuals.isFlipping = false;
         }
-
         wasGrounded = grounded;
 
-        // Flip owns everything — skip other visuals
-        if (isFlipping)
-        {
-            ProcessFlip();
-            return;
-        }
-
-        // ── DRIFT YAW (Y) — ground only ─────────────
+        // 2. Calculate Drift & Lean
         Vector3 localVel = transform.InverseTransformDirection(rb.linearVelocity);
         float lateralSlip = localVel.x;
         float speedFactor = Mathf.Clamp01(Mathf.Abs(localVel.z) / 5f);
 
         float targetYaw = grounded
-            ? steer * maxDriftYaw * speedFactor
-              * Mathf.Clamp01(Mathf.Abs(lateralSlip) / 2f)
+            ? steer * maxDriftYaw * speedFactor * Mathf.Clamp01(Mathf.Abs(lateralSlip) / 2f)
             : 0f;
 
         currentDriftYaw = Mathf.Lerp(
             currentDriftYaw,
             targetYaw,
-            Time.deltaTime * (Mathf.Abs(targetYaw) > 0.1f
-                ? driftYawSpeed : driftYawReturnSpeed)
+            Time.deltaTime * (Mathf.Abs(targetYaw) > 0.1f ? driftYawSpeed : driftYawReturnSpeed)
         );
 
-        // ── AIR LEAN (Z) — air only ──────────────────
         float targetLean = !grounded && Mathf.Abs(steer) > 0.1f
             ? -steer * maxAirLean : 0f;
 
@@ -109,39 +101,37 @@ public class CarFlip : MonoBehaviour
             Time.deltaTime * (grounded ? airLeanReturnSpeed : airLeanSpeed)
         );
 
-        // ── SINGLE WRITE — nothing else touches carVisuals ──
-        if (carVisuals != null)
-            carVisuals.localEulerAngles = new Vector3(
-                0f,
-                currentDriftYaw,
-                currentAirLean
-            );
-    }
-
-    void ProcessFlip()
-    {
-        if (carVisuals == null) return;
-
-        flipAngleDone += flipSpeed * Time.deltaTime;
-
-        if (flipAngleDone >= 360f)
+        // 3. Process the Flip Math
+        if (isFlipping)
         {
-            isFlipping = false;
-            flipAngleDone = 0f;
-            currentAirLean = 0f;
-            currentDriftYaw = 0f;
+            flipAngleDone += flipSpeed * Time.deltaTime;
 
-            if (wheelVisuals != null)
-                wheelVisuals.isFlipping = false;
-
-            carVisuals.localEulerAngles = Vector3.zero;
-            return;
+            if (flipAngleDone >= 360f)
+            {
+                flipAngleDone = 0f;
+                isFlipping = false;
+                if (wheelVisuals != null)
+                    wheelVisuals.isFlipping = false;
+            }
+        }
+        else if (flipAngleDone > 0f)
+        {
+            flipAngleDone = Mathf.Lerp(flipAngleDone, 360f, Time.deltaTime * flipSmoothing);
+            if (360f - flipAngleDone < 1f) flipAngleDone = 0f;
         }
 
-        carVisuals.localEulerAngles = new Vector3(
-            0f,
-            0f,
-            flipAngleDone * flipDirection
-        );
+        // 4. Combine Rotations (THE SMOOTH FIX)
+        if (carVisuals != null)
+        {
+            // Instead of Euler, we use AngleAxis to prevent the 180-degree flip bug.
+            Quaternion yawRotation = Quaternion.AngleAxis(currentDriftYaw, Vector3.up);
+
+            // We combine the Lean and the Flip together since they both happen on the Z (Forward) axis
+            float totalZRotation = currentAirLean + (flipAngleDone * flipDirection);
+            Quaternion rollRotation = Quaternion.AngleAxis(totalZRotation, Vector3.forward);
+
+            // Apply Yaw first, then Roll
+            carVisuals.localRotation = yawRotation * rollRotation;
+        }
     }
 }
