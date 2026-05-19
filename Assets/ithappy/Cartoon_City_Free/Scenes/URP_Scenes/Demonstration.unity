@@ -3834,6 +3834,22 @@ MonoBehaviour:
   steerThreshold: 0.3
   speedThreshold: 5
   cooldown: 3
+--- !u!114 &339401283
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 339401265}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e57c12e3787673549bed6de76201ae6e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TireSmokeController
+  leftSmoke: {fileID: 1431183677}
+  rightSmoke: {fileID: 394241484}
+  steerThreshold: 0.3
+  speedThreshold: 3
 --- !u!1001 &360684900
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -4467,6 +4483,11 @@ PrefabInstance:
 Transform:
   m_CorrespondingSourceObject: {fileID: 7640888531968657063, guid: 3f1f6417ccf4710439a85fdbe93885a5, type: 3}
   m_PrefabInstance: {fileID: 391413100}
+  m_PrefabAsset: {fileID: 0}
+--- !u!198 &394241484 stripped
+ParticleSystem:
+  m_CorrespondingSourceObject: {fileID: 2618464058869044473, guid: d5b8ed42ec20e9749aa927fc60775757, type: 3}
+  m_PrefabInstance: {fileID: 483688449}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &396061059
 PrefabInstance:
@@ -5636,6 +5657,18 @@ PrefabInstance:
       propertyPath: flipSpeed
       value: 600
       objectReference: {fileID: 0}
+    - target: {fileID: 1628531604137419324, guid: d5b8ed42ec20e9749aa927fc60775757, type: 3}
+      propertyPath: maxAirLean
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 1628531604137419324, guid: d5b8ed42ec20e9749aa927fc60775757, type: 3}
+      propertyPath: airLeanSpeed
+      value: 7
+      objectReference: {fileID: 0}
+    - target: {fileID: 1628531604137419324, guid: d5b8ed42ec20e9749aa927fc60775757, type: 3}
+      propertyPath: airLeanReturnSpeed
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 2605674645064591011, guid: d5b8ed42ec20e9749aa927fc60775757, type: 3}
       propertyPath: InitialModule.startColor.maxColor.r
       value: 0.90588236
@@ -5784,6 +5817,14 @@ PrefabInstance:
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 9213513357453363140, guid: d5b8ed42ec20e9749aa927fc60775757, type: 3}
+      propertyPath: m_Mass
+      value: 1200
+      objectReference: {fileID: 0}
+    - target: {fileID: 9213513357453363140, guid: d5b8ed42ec20e9749aa927fc60775757, type: 3}
+      propertyPath: m_AngularDamping
+      value: 3
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects:
     - {fileID: 2805136090879549066, guid: d5b8ed42ec20e9749aa927fc60775757, type: 3}
@@ -5792,6 +5833,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 2805070374093002949, guid: d5b8ed42ec20e9749aa927fc60775757, type: 3}
       insertIndex: -1
       addedObject: {fileID: 339401274}
+    - targetCorrespondingSourceObject: {fileID: 2805070374093002949, guid: d5b8ed42ec20e9749aa927fc60775757, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 339401283}
   m_SourcePrefab: {fileID: 100100000, guid: d5b8ed42ec20e9749aa927fc60775757, type: 3}
 --- !u!1001 &498915258
 PrefabInstance:
@@ -16443,6 +16487,11 @@ PrefabInstance:
 Transform:
   m_CorrespondingSourceObject: {fileID: 3137587247405040803, guid: dc010488c79022e489f975537f336766, type: 3}
   m_PrefabInstance: {fileID: 1431039294}
+  m_PrefabAsset: {fileID: 0}
+--- !u!198 &1431183677 stripped
+ParticleSystem:
+  m_CorrespondingSourceObject: {fileID: 2605674645064591011, guid: d5b8ed42ec20e9749aa927fc60775757, type: 3}
+  m_PrefabInstance: {fileID: 483688449}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &1437665459
 PrefabInstance:
