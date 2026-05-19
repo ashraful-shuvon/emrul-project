@@ -5758,7 +5758,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6682459630403296879, guid: d5b8ed42ec20e9749aa927fc60775757, type: 3}
       propertyPath: maxSpeed
-      value: 20
+      value: 30
       objectReference: {fileID: 0}
     - target: {fileID: 6682459630403296879, guid: d5b8ed42ec20e9749aa927fc60775757, type: 3}
       propertyPath: downforce
@@ -5766,7 +5766,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6682459630403296879, guid: d5b8ed42ec20e9749aa927fc60775757, type: 3}
       propertyPath: jumpForce
-      value: 11
+      value: 8
       objectReference: {fileID: 0}
     - target: {fileID: 6682459630403296879, guid: d5b8ed42ec20e9749aa927fc60775757, type: 3}
       propertyPath: turnSpeed
@@ -5775,14 +5775,14 @@ PrefabInstance:
     - target: {fileID: 6682459630403296879, guid: d5b8ed42ec20e9749aa927fc60775757, type: 3}
       propertyPath: groundCheck
       value: 
-      objectReference: {fileID: 0}
+      objectReference: {fileID: 788070750}
     - target: {fileID: 6682459630403296879, guid: d5b8ed42ec20e9749aa927fc60775757, type: 3}
       propertyPath: acceleration
-      value: 30
+      value: 40
       objectReference: {fileID: 0}
     - target: {fileID: 6682459630403296879, guid: d5b8ed42ec20e9749aa927fc60775757, type: 3}
       propertyPath: extraGravity
-      value: 30
+      value: 20
       objectReference: {fileID: 0}
     - target: {fileID: 6682459630403296879, guid: d5b8ed42ec20e9749aa927fc60775757, type: 3}
       propertyPath: airSteerForce
@@ -5790,23 +5790,31 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6682459630403296879, guid: d5b8ed42ec20e9749aa927fc60775757, type: 3}
       propertyPath: wingJumpForce
-      value: 40
+      value: 20
       objectReference: {fileID: 0}
     - target: {fileID: 6682459630403296879, guid: d5b8ed42ec20e9749aa927fc60775757, type: 3}
       propertyPath: carVisualModel
       value: 
-      objectReference: {fileID: 0}
+      objectReference: {fileID: 1849131978}
     - target: {fileID: 6682459630403296879, guid: d5b8ed42ec20e9749aa927fc60775757, type: 3}
       propertyPath: wingFoldGravity
-      value: 40
+      value: 25
       objectReference: {fileID: 0}
     - target: {fileID: 6682459630403296879, guid: d5b8ed42ec20e9749aa927fc60775757, type: 3}
       propertyPath: wingForwardBoost
       value: 15
       objectReference: {fileID: 0}
     - target: {fileID: 6682459630403296879, guid: d5b8ed42ec20e9749aa927fc60775757, type: 3}
+      propertyPath: groundCheckRadius
+      value: 0.3
+      objectReference: {fileID: 0}
+    - target: {fileID: 6682459630403296879, guid: d5b8ed42ec20e9749aa927fc60775757, type: 3}
       propertyPath: groundLayer.m_Bits
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6682459630403296879, guid: d5b8ed42ec20e9749aa927fc60775757, type: 3}
+      propertyPath: groundAlignmentSpeed
+      value: 12
       objectReference: {fileID: 0}
     - target: {fileID: 7226019978454711519, guid: d5b8ed42ec20e9749aa927fc60775757, type: 3}
       propertyPath: maxSteerAngle
@@ -8984,6 +8992,11 @@ PrefabInstance:
 Transform:
   m_CorrespondingSourceObject: {fileID: 3137587247405040803, guid: dc010488c79022e489f975537f336766, type: 3}
   m_PrefabInstance: {fileID: 787189540}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &788070750 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 4359884347173651760, guid: d5b8ed42ec20e9749aa927fc60775757, type: 3}
+  m_PrefabInstance: {fileID: 483688449}
   m_PrefabAsset: {fileID: 0}
 --- !u!1 &789102910
 GameObject:
