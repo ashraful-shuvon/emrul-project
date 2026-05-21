@@ -6631,7 +6631,7 @@ MonoBehaviour:
   rearLeftWheel: {fileID: 1684887318}
   rearRightWheel: {fileID: 1684887318}
   triggerRadius: 1.5
-  respawnDelay: 2
+  respawnDelay: 3
 --- !u!4 &592999838
 Transform:
   m_ObjectHideFlags: 0
