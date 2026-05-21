@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 public class HexTile : MonoBehaviour
 {
@@ -6,10 +6,21 @@ public class HexTile : MonoBehaviour
     public float fallSpeed = 8f;
     public float fallDistance = 10f;
 
+    [Header("Layer Names")]
+    public string defaultLayerName = "Ground";
+    public string fallingLayerName = "FallingTile";
+
     private Vector3 startPosition;
     private bool isTriggered = false;
     private IHexGrid grid;
     private Vector2Int gridKey;
+
+    private int defaultLayer;
+    private int fallingLayer;
+
+    private Transform visualChild;
+
+    public bool IsTriggered => isTriggered;
 
     public void Init(Vector3 position, IHexGrid hexGrid, Vector2Int key)
     {
@@ -18,34 +29,54 @@ public class HexTile : MonoBehaviour
         grid = hexGrid;
         gridKey = key;
         isTriggered = false;
+
+        gameObject.layer = defaultLayer;
+
         StopAllCoroutines();
+
+        if (visualChild != null)
+            visualChild.localPosition = Vector3.zero;
+
         gameObject.SetActive(true);
+    }
+
+    void Awake()
+    {
+        defaultLayer = LayerMask.NameToLayer(defaultLayerName);
+        fallingLayer = LayerMask.NameToLayer(fallingLayerName);
+        visualChild = transform.childCount > 0 ? transform.GetChild(0) : null;
     }
 
     public void TriggerFall()
     {
         if (isTriggered) return;
         isTriggered = true;
+
+        if (fallingLayer >= 0)
+            gameObject.layer = fallingLayer;
+
         StartCoroutine(FallSequence());
     }
 
     System.Collections.IEnumerator FallSequence()
     {
-        // Shake
-        Vector3 originalPos = transform.position;
+        // Shake the visual child only — root transform stays locked
+        // so the Rigidbody above never gets a contact-point shift
         float elapsed = 0f;
+        float shakeDuration = 0.2f;
+        Transform shakeTarget = visualChild != null ? visualChild : transform;
 
-        while (elapsed < 0.2f)
+        while (elapsed < shakeDuration)
         {
             float shake = Mathf.Sin(elapsed * 40f) * 0.04f;
-            transform.position = originalPos + new Vector3(shake, 0f, 0f);
+            shakeTarget.localPosition = new Vector3(shake, 0f, 0f);
             elapsed += Time.deltaTime;
             yield return null;
         }
 
-        transform.position = originalPos;
+        shakeTarget.localPosition = Vector3.zero;
 
-        // Fall down
+        // Fall root transform — car should be off the tile by now
         float targetY = startPosition.y - fallDistance;
         while (transform.position.y > targetY)
         {
@@ -57,14 +88,13 @@ public class HexTile : MonoBehaviour
             yield return null;
         }
 
-        // Move far below � keeps coroutine alive unlike SetActive(false)
+        // Park far below — keeps coroutine alive unlike SetActive(false)
         transform.position = new Vector3(
             transform.position.x,
             startPosition.y - 1000f,
             transform.position.z
         );
 
-        // Notify grid � grid handles respawn timer
         grid?.ScheduleRespawn(gridKey);
     }
 }

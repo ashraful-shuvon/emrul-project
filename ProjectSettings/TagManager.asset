@@ -14,6 +14,7 @@ TagManager:
   - Ball
   - HitPower
   - CarPrizeCollider
+  - 'FallingTile '
   layers:
   - Default
   - TransparentFX

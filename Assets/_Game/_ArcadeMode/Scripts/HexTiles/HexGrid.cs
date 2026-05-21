@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 
@@ -18,6 +18,10 @@ public class HexGrid : MonoBehaviour, IHexGrid
     public Transform rearRightWheel;
     public float triggerRadius = 1.5f;
 
+    [Header("Trigger Cooldown")]
+    [Tooltip("Seconds a tile is immune to re-triggering after first contact.")]
+    public float triggerCooldown = 0.15f;
+
     [Header("Respawn")]
     public float respawnDelay = 1f;
 
@@ -26,6 +30,8 @@ public class HexGrid : MonoBehaviour, IHexGrid
     private Dictionary<Vector2Int, Vector3> tilePositions
         = new Dictionary<Vector2Int, Vector3>();
     private Queue<GameObject> pool = new Queue<GameObject>();
+    private Dictionary<Vector2Int, float> triggerTimestamps
+        = new Dictionary<Vector2Int, float>();
 
     void Start()
     {
@@ -60,7 +66,6 @@ public class HexGrid : MonoBehaviour, IHexGrid
 
                 Vector3 pos = transform.position + new Vector3(worldX, 0f, worldZ);
                 Vector2Int key = new Vector2Int(col, row);
-
                 tilePositions[key] = pos;
                 SpawnTile(key, pos);
             }
@@ -70,22 +75,19 @@ public class HexGrid : MonoBehaviour, IHexGrid
     void SpawnTile(Vector2Int key, Vector3 pos)
     {
         GameObject obj;
-
         if (pool.Count > 0)
             obj = pool.Dequeue();
         else
             obj = Instantiate(hexPrefab, pos, Quaternion.identity, transform);
 
         obj.SetActive(true);
-
         HexTile tile = obj.GetComponent<HexTile>();
         if (tile == null) tile = obj.AddComponent<HexTile>();
-
         tile.Init(pos, this, key);
         activeTiles[key] = tile;
+        triggerTimestamps.Remove(key);
     }
 
-    // IHexGrid implementation
     public void ScheduleRespawn(Vector2Int key)
     {
         StartCoroutine(RespawnAfterDelay(key));
@@ -111,7 +113,8 @@ public class HexGrid : MonoBehaviour, IHexGrid
         SpawnTile(key, tilePositions[key]);
     }
 
-    void Update()
+    // Moved from Update → FixedUpdate to stay in sync with physics
+    void FixedUpdate()
     {
         CheckWheelOverTiles(rearLeftWheel);
         CheckWheelOverTiles(rearRightWheel);
@@ -121,12 +124,18 @@ public class HexGrid : MonoBehaviour, IHexGrid
     {
         if (wheel == null) return;
 
+        float now = Time.fixedTime;
         List<Vector2Int> toTrigger = new List<Vector2Int>();
 
         foreach (var kvp in activeTiles)
         {
             if (kvp.Value == null || !kvp.Value.gameObject.activeSelf) continue;
             if (kvp.Value.transform.position.y < -100f) continue;
+            if (kvp.Value.IsTriggered) continue;
+
+            if (triggerTimestamps.TryGetValue(kvp.Key, out float lastTime) &&
+                now - lastTime < triggerCooldown)
+                continue;
 
             float dist = Vector3.Distance(
                 new Vector3(wheel.position.x, 0f, wheel.position.z),
@@ -138,7 +147,12 @@ public class HexGrid : MonoBehaviour, IHexGrid
         }
 
         foreach (var key in toTrigger)
+        {
             if (activeTiles.ContainsKey(key))
+            {
+                triggerTimestamps[key] = now;
                 activeTiles[key].TriggerFall();
+            }
+        }
     }
 }
