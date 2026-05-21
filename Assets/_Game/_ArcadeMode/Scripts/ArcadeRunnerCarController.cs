@@ -64,6 +64,10 @@ public class ArcadeRunnerCarController : MonoBehaviour
     private float currentGroundProximity = 1f;
     private bool wingFalling = false;
 
+    private float groundedBuffer = 0f;
+    private float groundedBufferTime = 0.1f; // stays grounded for 0.1s after losing contact
+
+
     // =========================
     // INIT
     // =========================
@@ -162,16 +166,21 @@ public class ArcadeRunnerCarController : MonoBehaviour
     {
         if (groundCheck == null) return;
 
-        isGrounded = Physics.CheckSphere(
+        bool sphereCheck = Physics.CheckSphere(
             groundCheck.position, groundCheckRadius,
             groundLayer, QueryTriggerInteraction.Ignore
         );
 
-        RaycastHit hit;
-        if (Physics.Raycast(transform.position, Vector3.down, out hit, 8f, groundLayer))
-            currentGroundProximity = Mathf.Clamp01((hit.distance - groundCheckRadius) / 6f);
+        if (sphereCheck)
+        {
+            groundedBuffer = groundedBufferTime;
+            isGrounded = true;
+        }
         else
-            currentGroundProximity = 1f;
+        {
+            groundedBuffer -= Time.fixedDeltaTime;
+            isGrounded = groundedBuffer > 0f;
+        }
     }
 
     // =========================
@@ -255,52 +264,39 @@ public class ArcadeRunnerCarController : MonoBehaviour
     {
         if (isGrounded)
         {
+            // Only downforce — no extra gravity on ground
+            // Extra gravity was causing bouncing between hex tiles
             rb.AddForce(Vector3.down * downforce * rb.linearVelocity.magnitude);
             return;
         }
 
-        // Double jumping and not falling — no gravity, car stays in air
+        // Air only
         if (isDoubleJumping && !wingFalling)
             return;
 
-        // Smooth fall — triggered by steer or 3rd press
         if (wingFalling)
         {
-            // Kill upward velocity first
             if (rb.linearVelocity.y > 0)
             {
                 rb.linearVelocity = new Vector3(
                     rb.linearVelocity.x,
-                    Mathf.MoveTowards(
-                        rb.linearVelocity.y,
-                        0f,
-                        wingFoldGravity * Time.fixedDeltaTime
-                    ),
+                    Mathf.MoveTowards(rb.linearVelocity.y, 0f, wingFoldGravity * Time.fixedDeltaTime),
                     rb.linearVelocity.z
                 );
             }
 
-            // Smoothly accelerate downward to target fall speed
-            float targetYVelocity = Mathf.MoveTowards(
+            float targetY = Mathf.MoveTowards(
                 rb.linearVelocity.y,
                 smoothSlamTargetSpeed,
                 Time.fixedDeltaTime * wingFallGravity
             );
 
-            rb.linearVelocity = new Vector3(
-                rb.linearVelocity.x,
-                targetYVelocity,
-                rb.linearVelocity.z
-            );
+            rb.linearVelocity = new Vector3(rb.linearVelocity.x, targetY, rb.linearVelocity.z);
         }
         else
         {
-            // Normal single jump — light gravity
-            float dynamicGravityFactor = Mathf.Lerp(0.2f, 1f, currentGroundProximity);
-            rb.AddForce(
-                Vector3.down * extraGravity * dynamicGravityFactor,
-                ForceMode.Acceleration
-            );
+            float dynamicGravity = Mathf.Lerp(0.2f, 1f, currentGroundProximity);
+            rb.AddForce(Vector3.down * extraGravity * dynamicGravity, ForceMode.Acceleration);
         }
     }
 
