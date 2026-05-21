@@ -3811,11 +3811,6 @@ MonoBehaviour:
   driftYawReturnSpeed: 4
   flipDisabled: 0
   currentDriftYaw: 0
---- !u!4 &339401285 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 2803166422261702591, guid: d5b8ed42ec20e9749aa927fc60775757, type: 3}
-  m_PrefabInstance: {fileID: 483688449}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &360684900
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -5705,7 +5700,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6682459630403296879, guid: d5b8ed42ec20e9749aa927fc60775757, type: 3}
       propertyPath: maxSpeed
-      value: 30
+      value: 20
       objectReference: {fileID: 0}
     - target: {fileID: 6682459630403296879, guid: d5b8ed42ec20e9749aa927fc60775757, type: 3}
       propertyPath: downforce
@@ -5725,7 +5720,7 @@ PrefabInstance:
       objectReference: {fileID: 788070750}
     - target: {fileID: 6682459630403296879, guid: d5b8ed42ec20e9749aa927fc60775757, type: 3}
       propertyPath: acceleration
-      value: 40
+      value: 30
       objectReference: {fileID: 0}
     - target: {fileID: 6682459630403296879, guid: d5b8ed42ec20e9749aa927fc60775757, type: 3}
       propertyPath: extraGravity
@@ -5757,7 +5752,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6682459630403296879, guid: d5b8ed42ec20e9749aa927fc60775757, type: 3}
       propertyPath: groundLayer.m_Bits
-      value: 0
+      value: 64
       objectReference: {fileID: 0}
     - target: {fileID: 6682459630403296879, guid: d5b8ed42ec20e9749aa927fc60775757, type: 3}
       propertyPath: groundAlignmentSpeed
@@ -6633,8 +6628,10 @@ MonoBehaviour:
   hexPrefab: {fileID: 8650444493154381017, guid: a0ef1d9aecc72164faf8abad62a3623b, type: 3}
   arenaRadius: 60
   hexRadius: 1
-  car: {fileID: 339401285}
+  rearLeftWheel: {fileID: 1684887318}
+  rearRightWheel: {fileID: 1684887318}
   triggerRadius: 1.5
+  respawnDelay: 2
 --- !u!4 &592999838
 Transform:
   m_ObjectHideFlags: 0
@@ -18661,6 +18658,11 @@ PrefabInstance:
 Transform:
   m_CorrespondingSourceObject: {fileID: 8206393780791148591, guid: 90c39d39c7904474ea2554288d4018da, type: 3}
   m_PrefabInstance: {fileID: 1682104418}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &1684887318 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 6858872340452352018, guid: d5b8ed42ec20e9749aa927fc60775757, type: 3}
+  m_PrefabInstance: {fileID: 483688449}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &1690126439
 PrefabInstance:
