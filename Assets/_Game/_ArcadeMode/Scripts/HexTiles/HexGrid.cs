@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿// HexGrid.cs
+using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 
@@ -19,7 +20,6 @@ public class HexGrid : MonoBehaviour, IHexGrid
     public float triggerRadius = 1.5f;
 
     [Header("Trigger Cooldown")]
-    [Tooltip("Seconds a tile is immune to re-triggering after first contact.")]
     public float triggerCooldown = 0.15f;
 
     [Header("Respawn")]
@@ -75,14 +75,17 @@ public class HexGrid : MonoBehaviour, IHexGrid
     void SpawnTile(Vector2Int key, Vector3 pos)
     {
         GameObject obj;
+
         if (pool.Count > 0)
             obj = pool.Dequeue();
         else
             obj = Instantiate(hexPrefab, pos, Quaternion.identity, transform);
 
         obj.SetActive(true);
+
         HexTile tile = obj.GetComponent<HexTile>();
         if (tile == null) tile = obj.AddComponent<HexTile>();
+
         tile.Init(pos, this, key);
         activeTiles[key] = tile;
         triggerTimestamps.Remove(key);
@@ -113,7 +116,6 @@ public class HexGrid : MonoBehaviour, IHexGrid
         SpawnTile(key, tilePositions[key]);
     }
 
-    // Moved from Update → FixedUpdate to stay in sync with physics
     void FixedUpdate()
     {
         CheckWheelOverTiles(rearLeftWheel);
@@ -134,8 +136,7 @@ public class HexGrid : MonoBehaviour, IHexGrid
             if (kvp.Value.IsTriggered) continue;
 
             if (triggerTimestamps.TryGetValue(kvp.Key, out float lastTime) &&
-                now - lastTime < triggerCooldown)
-                continue;
+                now - lastTime < triggerCooldown) continue;
 
             float dist = Vector3.Distance(
                 new Vector3(wheel.position.x, 0f, wheel.position.z),
