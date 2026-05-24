@@ -78,7 +78,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: abdfb6e2a9477d343b0d731aa975edb2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::HexTile
-  fallDelay: 0.5
+  touchDelay: 0.2
   fallSpeed: 8
   fallDistance: 10
-  destroyDelay: 2
+  defaultLayerName: Ground
+  fallingLayerName: FallingTile

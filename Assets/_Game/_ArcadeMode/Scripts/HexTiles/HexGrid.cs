@@ -1,5 +1,4 @@
-﻿// HexGrid.cs
-using UnityEngine;
+﻿using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 
@@ -25,6 +24,17 @@ public class HexGrid : MonoBehaviour, IHexGrid
     [Header("Respawn")]
     public float respawnDelay = 1f;
 
+    [Header("Activation")]
+    public float activationDelay = 1f;      // seconds after moving before tiles activate
+    public float minSpeedToActivate = 1f;   // min speed to count as moving
+
+    private bool tilesActive = false;
+    private bool timerStarted = false;
+    private float activationTimer = 0f;
+
+    private ArcadeRunnerCarController carController;
+    private Rigidbody carRb;
+
     private Dictionary<Vector2Int, HexTile> activeTiles
         = new Dictionary<Vector2Int, HexTile>();
     private Dictionary<Vector2Int, Vector3> tilePositions
@@ -36,7 +46,46 @@ public class HexGrid : MonoBehaviour, IHexGrid
     void Start()
     {
         GenerateRoundArena();
+
+        // Find car
+        carController = FindFirstObjectByType<ArcadeRunnerCarController>();
+        if (carController != null)
+            carRb = carController.GetComponent<Rigidbody>();
     }
+
+    void FixedUpdate()
+    {
+        // Activation check
+        if (!tilesActive)
+        {
+            if (carRb != null)
+            {
+                float speed = new Vector3(
+                    carRb.linearVelocity.x, 0f, carRb.linearVelocity.z
+                ).magnitude;
+
+                if (speed > minSpeedToActivate && !timerStarted)
+                {
+                    timerStarted = true;
+                    activationTimer = 0f;
+                }
+
+                if (timerStarted)
+                {
+                    activationTimer += Time.fixedDeltaTime;
+                    if (activationTimer >= activationDelay)
+                        tilesActive = true;
+                }
+            }
+            return;
+        }
+
+        // Tile checks — only when active
+        CheckWheelOverTiles(rearLeftWheel);
+        CheckWheelOverTiles(rearRightWheel);
+    }
+
+    // Remove Update() entirely
 
     void GenerateRoundArena()
     {
@@ -116,11 +165,6 @@ public class HexGrid : MonoBehaviour, IHexGrid
         SpawnTile(key, tilePositions[key]);
     }
 
-    void FixedUpdate()
-    {
-        CheckWheelOverTiles(rearLeftWheel);
-        CheckWheelOverTiles(rearRightWheel);
-    }
 
     void CheckWheelOverTiles(Transform wheel)
     {

@@ -5612,7 +5612,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 343773227684101509, guid: d5b8ed42ec20e9749aa927fc60775757, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 3.7
+      value: 3.8
       objectReference: {fileID: 0}
     - target: {fileID: 1628531604137419324, guid: d5b8ed42ec20e9749aa927fc60775757, type: 3}
       propertyPath: flipSpeed
@@ -5636,7 +5636,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2803166422261702591, guid: d5b8ed42ec20e9749aa927fc60775757, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.7
+      value: 0.8
       objectReference: {fileID: 0}
     - target: {fileID: 2805070374093002949, guid: d5b8ed42ec20e9749aa927fc60775757, type: 3}
       propertyPath: m_IsActive
@@ -6633,6 +6633,8 @@ MonoBehaviour:
   triggerRadius: 1.5
   triggerCooldown: 0.15
   respawnDelay: 3
+  activationDelay: 1
+  minSpeedToActivate: 1
 --- !u!4 &592999838
 Transform:
   m_ObjectHideFlags: 0
@@ -11577,7 +11579,7 @@ Transform:
   m_GameObject: {fileID: 963194225}
   serializedVersion: 2
   m_LocalRotation: {x: 0.122183256, y: -0.0000000144768295, z: 0.0000000017821791, w: 0.9925076}
-  m_LocalPosition: {x: -12, y: 3.7, z: -10}
+  m_LocalPosition: {x: -12, y: 3.8, z: -10}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
