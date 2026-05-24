@@ -1,6 +1,7 @@
 ﻿// ArcadeRunnerCarController.cs
 using UnityEngine;
 using UnityEngine.InputSystem;
+using System.Collections;
 
 [RequireComponent(typeof(Rigidbody))]
 public class ArcadeRunnerCarController : MonoBehaviour
@@ -71,10 +72,22 @@ public class ArcadeRunnerCarController : MonoBehaviour
     {
         rb = GetComponent<Rigidbody>();
         rb.centerOfMass = new Vector3(0, -0.5f, 0f);
-        rb.constraints = RigidbodyConstraints.FreezeRotationX |
-                         RigidbodyConstraints.FreezeRotationZ;
+        rb.constraints =
+            RigidbodyConstraints.FreezeRotationX |
+            RigidbodyConstraints.FreezeRotationZ;
+
         if (groundLayer.value == 0)
             groundLayer = LayerMask.GetMask("Ground");
+
+        // Freeze until physics settles
+        rb.isKinematic = true;
+        StartCoroutine(UnfreezeAfterDelay(0.5f));
+    }
+
+    IEnumerator UnfreezeAfterDelay(float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        rb.isKinematic = false;
     }
 
     public void OnMove(InputValue value)
